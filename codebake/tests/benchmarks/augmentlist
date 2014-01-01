@@ -1,0 +1,2 @@
+#!/bin/bash
+python -m timeit -s'import subprocess' -n 1 "subprocess.call(['/home/aytch/inkdot/codebake/codebake/initlist.py', '-df', '/home/aytch/inkdot/codebake/codebake/tests/jquery.js'])"

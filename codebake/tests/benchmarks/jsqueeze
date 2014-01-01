@@ -1,0 +1,2 @@
+#!/bin/bash
+python -m timeit -s'import subprocess' -n 12 -r 3 "subprocess.call(['php','/home/aytch/inkdot/codebake/codebake/tests/bench_jsqueeze.php', '/home/aytch/inkdot/codebake/codebake/tests/jquery.js'])"
