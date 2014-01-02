@@ -6,9 +6,7 @@ Author: Nicholas Riley
 """
 
 import re
-import random
-import os
-import sys
+from os import path, sep, makedirs
 from __main__ import Bind
 
 '''
@@ -73,10 +71,10 @@ class Generator:
 			
 
 def fetch(Main):
-	if Main.config.get('subsitute'):
+	if Main.config['subsitute']:
 		Main.userVars = Main.subsituteVars.copy()
 	gen = Generator()
-	filepath = Main.config.filepath
+	filepath = Main.config['filepath']
 	regexList = {
 		'removeDbg'				: r'(dbg\(.*\)[,\|;]?)',
 		'removeLineComments' 	: r'([\h\t]*/{2}.*[\r\n]?)',
@@ -107,20 +105,20 @@ def fetch(Main):
 		return string.group(0)
 	
 	def chunk(string):
-		if Main.config.chunk == Main.chunkCount:
+		if Main.config['chunk'] == Main.chunkCount:
 			Main.chunkCount = 1
 			return ' @_n '
 		Main.chunkCount += 1
 
 
 	#read file if not string
-	if not Main.config.string:
+	if not Main.config['string']:
 		#get file from arg
 		with open(filepath) as fp:
 			#removeDocComments
 			Main.data = re.sub(regexList['replaceString'], stringExchange, fp.read())
 	else:
-		Main.data = re.sub(regexList['replaceString'], stringExchange, Main.config.string)
+		Main.data = re.sub(regexList['replaceString'], stringExchange, Main.config['string'])
 		#removeDocComments
 	
 	#remove line comments and dbg statements
@@ -128,7 +126,7 @@ def fetch(Main):
 	Main.data = re.sub(regex, '', Main.data)
 	#Main.data = re.sub(regexList['replaceRegex'], stringExchange, Main.data)
 
-	if Main.config.obfuscate:
+	if Main.config['obfuscate']:
 		#capture function params
 		#TODO
 		#TODO
@@ -136,31 +134,17 @@ def fetch(Main):
 		#TODO - capture through  iterative process with an id so we can identify and
 		#instantiate unique generators per function or similar workaround
 		Main.data = re.sub(r'function\((.*?\))', functionCapture, Main.data)
-	#if not Main.config.whitespace:
+	#if not Main.config['whitespace']:
 	#Main.data = re.sub(' ', ' @_s ', Main.data)
 	#Main.data = re.sub('\t', ' @_t ', Main.data)
 
-	if Main.config.chunk:
+	if Main.config['chunk']:
 		Main.data = re.sub('\n', chunk, Main.data)
 	#mark characters
 	#seperate by anything that isn't valid character
 	Main.data = re.sub(r'([^\w\d_@$])', r' \1 ', Main.data).split()
 	#read string data
 	parse(Main, gen)
-
-
-#check if number or return false
-def num(string):
-	print(1)
-	try:
-		return int(string)
-	except ValueError:
-		pass
-	try:
-		return float(string)
-	except ValueError:
-		print(2)
-		return False
 
 #main js parser
 def parse(Main, gen):
@@ -194,8 +178,9 @@ def parse(Main, gen):
 			]
 
 	userBlocked = []
+	config = Main.config
 	blocked = set(spaceRequired + dualSpaceRequired + Generator.block + blockList)
-	defaults = {} if not Main.config.get('susbsitute') else Main.subsituteVars.copy()
+	defaults = {} if not config['subsitute'] else Main.subsituteVars.copy()
 	__set = set()
 	__setAdd = __set.add
 	operators = set([x for x in logic + assignment if x not in __set and not __setAdd(x)])
@@ -306,7 +291,7 @@ def parse(Main, gen):
 	#print(seek.next.value)
 
 	def obfuscateAdd(index):
-		if Main.config.obfuscate:
+		if Main.config['obfuscate']:
 			value = Main.data[index]
 			v1 = value[0:1]
 			if v1 != '/' and v1 != "'" and v1 != '"' and value not in blocked:
@@ -323,28 +308,40 @@ def parse(Main, gen):
 						#Main.data[index] = Main.userVars[value]
 
 	count = 0
-	skipmsg = ''
-	obfuscate = Main.config.obfuscate
-	for syntax in Main.data:
+	#skipmsg = ''
+	obfuscate = Main.config['obfuscate']
+	mdata = Main.data
+	insert = mdata.insert
+	mskip = Main.skip
+	userStrings = Main.userStrings
+	userVars = Main.userVars
+	seekprev = seek.prev
+	seeknext = seek.next
+	seeknextvalue = seek.next.value
+	seekprevvalue = seek.prev.value
+	seeknextindex = seek.next.index
+	seekprevindex = seek.prev.index
+	mget = Main.get
+	for syntax in mdata:
 		#print(syntax[0:3])
-		if Main.skip > 0:
+		if mskip > 0:
 			#print('skip--------------------------'+syntax)
-			#print(Main.data[count-2:count+2])
-			#print(skipmsg)
-			Main.skip -= 1
+			#print(mdata[count-2:count+2])
+			#print(#skipmsg)
+			mskip -= 1
 			count += 1
 			continue
 		if syntax[0] == '@':
 			_syntax3 = syntax[0:3]
 			if _syntax3 == '@S_':
-				Main.data[count] = Main.userStrings[syntax]
-			elif Main.config.chunk:
+				mdata[count] = userStrings[syntax]
+			elif config['chunk']:
 				if _syntax3 == '@_n':
-					Main.data[count] = '\n'
+					mdata[count] = '\n'
 				elif _syntax3 == '@_t':
-					Main.data[count] = '\t'
+					mdata[count] = '\t'
 				elif _syntax3 == '@_s':
-					Main.data[count] = ' '
+					mdata[count] = ' '
 			count += 1
 			continue
 		elif syntax == '=':
@@ -356,68 +353,68 @@ def parse(Main, gen):
 			#	Main.quit('File cannot begin with =')
 			#el
 				dist = 0
-				skip = False
+				skip = defName = False
 				while count - (dist + 1) > 0:
 					dist += 1
-					defName = Main.data[count - dist]
+					defName = mdata[count - dist]
 					if defName[0:3] == '@S_':
 						skip = True
 						break
 						
 					if defName != ' ' and defName != '\n' and defName not in operators and defName not in skipChars:
 						break
-				if skip:
+				if skip or not defName:
 					continue
-				if not defName:
-					raise IndexError(defName)
 				obfuscateAdd(count - dist)
 		elif syntax != '=' and syntax != ';' and (syntax[0:1] in operators or syntax[0:1] in skipChars or syntax in userBlocked):
 			#TODO - add characters to skip
 			count += 1
 			continue
-		elif Main.config.subsitute and syntax in defaults:
-			Main.data[count] = Main.userVars[syntax]
+		elif config['subsitute'] and syntax in defaults:
+			mdata[count] = userVars[syntax]
 		#elif type(num(syntax)) == int:
 		#	userBlocked.append(syntax)
 		elif syntax in dualSpaceRequired:
-			#if Main.data[count-1] != ' ':
-			#	Main.data.insert(count, ' ')
-			#	Main.skip += 1
+			#if mdata[count-1] != ' ':
+			#	insert(count, ' ')
+			#	mskip += 1
 			#TODO - continue this logic ^
 
-			Main.data.insert(count, ' ')
-			Main.data.insert(count + 2, ' ')
-			Main.skip += 2
-			skipmsg = 'dualspace12'
+			insert(count, ' ')
+			insert(count + 2, ' ')
+			mskip += 2
+			#skipmsg = 'dualspace12'
 		elif syntax == 'if':
-			#next1 = Main.get(count + 1)
-			seek.prev(count)
-			prev1 = seek.prev.value
+			#next1 = mget(count + 1)
+			seekprev(count)
+			prev1 = seekprevvalue
 			if prev1 and prev1 == 'else':
-				Main.data.insert(count, ' ')
-				Main.skip += 1
-				skipmsg = 'if12'
+				insert(count, ' ')
+				mskip += 1
+				#skipmsg = 'if12'
 		else:
-			#seek.next(count)
-			seek.next(count)
-			next1 = seek.next.value
+			#seeknext(count)
+			seeknext(count)
+			next1 = seeknextvalue
+			if not next1:
+				break
 
 			if syntax in spaceRequired:
-				Main.data.insert(count + 1, ' ')
-				skipmsg = 'spaceRequired55'
+				insert(count + 1, ' ')
+				#skipmsg = 'spaceRequired55'
 				#and skip all
-				Main.skip += 1
-			elif Main.config.extras and syntax == ';':
+				mskip += 1
+			elif config['extras'] and syntax == ';':
 				#opt -- remove extra semicolons
 				if next1 == '}':
-					#Main.skip += 1
-					Main.data[count:seek.next.index + 1] = ['}']
+					#mskip += 1
+					mdata[count:seeknextindex + 1] = ['}']
 			elif syntax == 'case':
 				#if not string
 				if next1[0:3] != '@S_':
-					Main.data.insert(count + 1, ' ')
-					Main.skip += 1
-					skipmsg = '@S_ 88'
+					insert(count + 1, ' ')
+					mskip += 1
+					#skipmsg = '@S_ 88'
 			elif syntax == 'function':
 				#TODO -- URGER
 				#TODO -- URGER
@@ -425,21 +422,21 @@ def parse(Main, gen):
 				#to re generate non-blocked list of stored uservar references
 
 				#print('==========')
-				#print(Main.data[count-5:count+5])
-				#print(Main.data[seek.next.index])
+				#print(mdata[count-5:count+5])
+				#print(mdata[seeknextindex])
 
 				#grab defined function name
 				#is function call started: "function("
 				#if not add a space: "function foo(
 				if next1 and next1 != '(':
 					#set name
-					obfuscateAdd(seek.next.index)
-					Main.data.insert(count + 1, ' ')
-					Main.skip += 1
-					skipmsg = '(   909'
+					obfuscateAdd(seeknextindex)
+					insert(count + 1, ' ')
+					mskip += 1
+					#skipmsg = '(   909'
 		count += 1
 
-	if Main.config.obfuscate:
+	if config['obfuscate']:
 		count = 0
 		#end for
 		#Main.complete()
@@ -449,14 +446,14 @@ def parse(Main, gen):
 		blocked2 = set(list(blockList) + list(dualSpaceRequired) + list(spaceRequired) + defaults.values())
 
 		#print(gen.used)
-		for syntax in Main.data:
-			#prev = Main.get(count - 1)
+		for syntax in mdata:
+			#prev = mget(count - 1)
 			if syntax[0:1] not in skipChars and syntax not in blocked and syntax not in blocked2:
-				if syntax in Main.userVars:
+				if syntax in userVars:
 					dist = 0
 					while True:
 						dist += 1
-						prev = Main.data[count - dist]
+						prev = mdata[count - dist]
 						if not prev or (prev != ' ' and prev!= '\n'):
 							break
 					#make sure it isn't part of an object
@@ -465,62 +462,63 @@ def parse(Main, gen):
 						dist = 0
 						while True:
 							dist += 1
-							next1 = Main.get(count + dist)
+							next1 = mget(count + dist)
 							if not next1 or (next1 != ' ' and next1 != '\n'):
 								break
 						if not next1 or next1 != ':' or prev == '?':
-							Main.data[count] = Main.userVars[syntax]
+							mdata[count] = userVars[syntax]
 			#increase by one
 			count += 1
 	#final string!!!
-	Main.data = ''.join(Main.data)
+	mdata = ''.join(mdata)
 
 	
 
 	#write to file
-	if Main.config.get('writepath'):
-		expandPath = os.path.abspath(Main.config.writepath)
-		dirPath = os.path.dirname(expandPath)
+	if config['writepath']:
+		expandPath = path.abspath(config['writepath'])
+		dirPath = path.dirname(expandPath)
 
-		if not os.path.isdir(dirPath):
+		if not path.isdir(dirPath):
 			if Main.isatty:
 				createDirs = checkDirs(dirPath)
-				if not Main.config.get('force'):
+				if not config['force']:
 					answer = Main.console.raw_input('Create Directories[Yes/No]? > ').lower()
 					if answer == 'yes' or answer == 'y':
-						os.makedirs(createDirs)
+						makedirs(createDirs)
 				else:
-					os.makedirs(createDirs)
+					makedirs(createDirs)
 			#not interactive
-			elif not Main.config.get('force'):
+			elif not config['force']:
 				Main.quit('Directories don\'t exists: use command option -x to force creation')
 		with open(expandPath, 'w') as fp:
-			fp.write(Main.data)
+			fp.write(mdata)
 		#update Main
-		Main.stats.update({
-			'originalPath'	: Main.config.writepath, 
-			'compilePath'	: expandPath,
-			'compileSize'	: os.path.getsize(expandPath)
-			})
-	else:
+		if config['verbose']:
+			Main.stats.update({
+				'originalPath'	: config['writepath'], 
+				'compilePath'	: expandPath,
+				'compileSize'	: path.getsize(expandPath)
+				})
+	elif config['verbose']:
 		#update Main
-		Main.stats['compileSize'] = Main.data.__len__()
+		Main.stats['compileSize'] = mdata.__len__()
 
-	origSize = int(os.path.getsize(Main.config.filepath) if not Main.config.string else Main.config.string.__len__())
-	Main.stats['originalSize'] = origSize
-	Main.stats['percent'] = int(round(100 / (float(Main.stats['originalSize']) / float((Main.stats['originalSize'] - Main.stats['compileSize'])))))
+	if config['verbose']:
+		origSize = int(path.getsize(config['filepath']) if not config['string'] else config['string'].__len__())
+		Main.stats['originalSize'] = origSize
+		Main.stats['percent'] = int(round(100 / (float(Main.stats['originalSize']) / float((Main.stats['originalSize'] - Main.stats['compileSize'])))))
 	#complete the clean
 	Main.complete()
 
 
 #check and display directories
 def checkDirs(dirPath):
-	sep = os.sep
 	dirs = dirPath.split(sep)[1:]
 	count = 0
 	isDir = True
 	path = sep + dirs[0]
-	while os.path.isdir(path):
+	while path.isdir(path):
 		count += 1
 		path += sep + dirs[count]
 	path = sep+sep.join(dirs[0:count])

@@ -9,11 +9,9 @@ Author: Nicholas Riley
 #TODO - Insert seperator --sep-text --sep-file?
 
 #includes
-import os
-import readline
 import sys
-import argparse
-import subprocess
+from os import path
+from argparse import ArgumentParser
 
 		
 class Bind(object):
@@ -106,20 +104,10 @@ class Codebake(object):
 		self.config = self.__class__.config.copy()
 
 	def interact(self):
-		if self.isatty:
-			import cli
-			self.console = cli.Console()
-			def restart():
-				#cli capture
-				opts = self.console.raw_input('codebake > ')
-				#add __file__ to new args + opts
-				sys.argv = [sys.argv[0]] + opts.split()
-				self._parseOpts(1)
-			self.console.restart = restart
 			
 		#parser info
 		#build opts parser
-		parser = self.parser = argparse.ArgumentParser(
+		parser = self.parser = ArgumentParser(
 				prog="Codebake", 
 				description='Clean CSS, HTML, and JavaScript files.',
 				epilog='Interactive commands: ' + ', '.join(self.commands),
@@ -149,13 +137,14 @@ class Codebake(object):
 		try:
 			#check for command, execute and restart console
 			if sys.argv[1] in self.commands:
+				import subprocess
 				procFail = subprocess.call(sys.argv[1:len(sys.argv)])
 				#restart
 				self.restart()
 				return
 			#check if file exists and restart with proper params
-			elif sys.argv[1][0:1] != '-':
-				if os.path.isfile(sys.argv[1]):
+			elif sys.argv[1] != '' and sys.argv[1][0:1] != '-':
+				if path.isfile(sys.argv[1]):
 					sys.argv.insert(1, '-f')
 					argLength += 1
 				else:
@@ -173,14 +162,28 @@ class Codebake(object):
 					self.parser.print_help()
 					if interactive and self.isatty:
 						self.console.restart()
-					return
 				#check for exit
 				elif sys.argv[1] == 'exit':
 					self.quit()
-					return
-			if self.isatty:
+				return
+			elif self.isatty:
 				#force interactive mode
 				self.interactive = 1
+				if self.console == None:
+					from cli import Console
+					self.console = Console()
+					def restart(fresh = 0):
+						#cli capture
+						try:
+							opts = self.console.raw_input('codebake > ')
+						except KeyboardInterrupt:
+							#bye
+							print()
+							self.quit()
+						#add __file__ to new args + opts
+						sys.argv = [sys.argv[0]] + opts.split()
+						self._parseOpts(1, fresh)
+					self.console.restart = restart
 				#process fail, no user processes matched below
 				if fresh:
 					#print startup message
@@ -188,13 +191,8 @@ class Codebake(object):
 					self.parser.print_help()
 				elif not force:
 					print('Error: Invalid Filepath : use -h for help')
-				try:
 					#start console
-					self.console.restart()
-				except KeyboardInterrupt:
-					#bye
-					print()
-					self.quit()
+				self.console.restart()
 			else:
 				print('Error: required [-f Filepath]')
 				sys.exit(1)
@@ -205,7 +203,11 @@ class Codebake(object):
 		#set arguments as settings
 		#try:
 		if self.interactive:
-			self.args = vars(self.parser.parse_args(sys.argv[1:len(sys.argv)]))
+			try:
+				self.args = vars(self.parser.parse_args(sys.argv[1:len(sys.argv)]))
+			except:
+				self.console.restart()
+				return
 		else:
 			self.args = vars(self.parser.parse_args())
 		for arg in self.args:
@@ -223,22 +225,20 @@ class Codebake(object):
 		'''
 		#print(self.config)
 		#turn into namespace
-		self.config = Bind(self.config)
-		if not self.config.string:
+		#self.config = Bind(self.config)
+		if not self.config['string']:
 			#lastly verify that there is a file
 			self.checkFileName()
 		#get new fogged code
-		import bake
-		bake.fetch(self)
+		from bake import fetch
+		fetch(self)
 
-	#TODO - any calls to this should be removed
 	def get(self, index):
 		try:
 			return self.data[index]
 		except IndexError:
 			return False
 	
-
 	#restart interactive console
 	def restart(self):
 		#reset args
@@ -254,7 +254,7 @@ class Codebake(object):
 				print(''.join(self.data))
 			else:
 				print('File created: %s' % self.stats['compilePath'])
-			if self.config.verbose:
+			if self.config['verbose']:
 				print(self._getStats())
 			if self.interactive:
 				self.restart()
@@ -273,9 +273,9 @@ class Codebake(object):
 
 	#make sure file exists
 	def checkFileName(self):
-		if not self.config.filepath:
+		if not self.config['filepath']:
 			self.noFile('noEmpty')
-		elif not os.path.isfile(self.config.filepath):
+		elif not path.isfile(self.config['filepath']):
 			self.noFile('noFile')
 
 	def _getStats(self):
@@ -294,7 +294,7 @@ class Codebake(object):
 			if msg == '1':
 				sys.exit()
 			else:
-				if self.config.verbose:
+				if self.config['verbose']:
 					print(_getStats())
 				sys.exit(msg)
 		else:
