@@ -1,0 +1,8 @@
+#!/usr/bin/python
+import yaml
+with open('tests/build.yaml') as ymFile:
+	ym = yaml.load(ymFile)
+
+
+
+print(ym['object'])

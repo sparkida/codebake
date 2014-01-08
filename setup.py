@@ -1,11 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 from distutils.core import setup
-setup(name='Codebake',
+setup(name='codebake',
 		version='1.0',
 		description='Utility for quickly minifying and obfuscating JavaScript',
 		url='http://github.com/sparkida/augment',
 		author='Nicholas Riley',
 		author_email='nick@sparkida.com',
 		license='MIT',
+		scripts=['bake'],
+		platforms='Linux',
 		packages=['codebake'])
 
