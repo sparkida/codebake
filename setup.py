@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from distutils.core import setup
-import sys, os
+from setuptools import setup, find_packages
 setup(name='codebake',
 		version='1.0',
 		description='Utility for quickly minifying and obfuscating JavaScript',
@@ -10,5 +9,6 @@ setup(name='codebake',
 		license='MIT',
 		scripts=['bake'],
 		platforms='Linux',
-		packages=['codebake'])
+		install_requires=['argparse','readline'],
+		packages=find_packages())
 

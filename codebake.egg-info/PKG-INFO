@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: codebake
+Version: 1.0
+Summary: Utility for quickly minifying and obfuscating JavaScript
+Home-page: http://github.com/sparkida/augment
+Author: Nicholas Riley
+Author-email: nick@sparkida.com
+License: MIT
+Description: UNKNOWN
+Platform: Linux
