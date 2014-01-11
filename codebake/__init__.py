@@ -10,7 +10,7 @@ Author: Nicholas Riley
 
 #includes
 import sys
-from os import path
+from os import path,name
 from argparse import ArgumentParser
 
 		

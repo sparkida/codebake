@@ -1,4 +1,12 @@
-import readline
+
+from sys import platform
+
+if not platform.startswith('linux'):
+	print('\033[1;41m!!!DEV MODE--remove "not" :: using readline\033[1;m')
+	import readline
+else:
+	print('\033[1;41m!!!DEV MODE--remove "not" :: using pyreadline\033[1;m')
+	import pyreadline
 from code import InteractiveConsole
 
 class Console(InteractiveConsole):
