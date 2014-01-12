@@ -138,7 +138,7 @@ class Codebake(object):
 			#check for command, execute and restart console
 			if sys.argv[1] in self.commands:
 				import subprocess
-				procFail = subprocess.call(sys.argv[1:len(sys.argv)])
+				procFail = subprocess.call(sys.argv[1:len(sys.argv)-1])
 				#restart
 				self.restart()
 				return
@@ -261,14 +261,14 @@ class Codebake(object):
 				return
 		else:
 			sys.stdout.write(''.join(self.data))
-		self.quit('1')
+		self.quit(1)
 
 	#get file name from input
 	def noFile(self, msgType):
 		if msgType != None:
 			print(self.__class__.msg[msgType])
 			if not self.isatty or self.isatty and not self.interactive:
-				self.quit('1')
+				self.quit(1)
 		self.restart()
 
 	#make sure file exists
@@ -290,8 +290,8 @@ class Codebake(object):
 
 	#quit with message
 	def quit(self, msg = ''):
-		if msg.__len__() > 0:
-			if msg == '1':
+		if msg != '':
+			if msg == 1:
 				sys.exit()
 			else:
 				if self.config['verbose']:

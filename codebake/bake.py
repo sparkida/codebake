@@ -7,7 +7,7 @@ Author: Nicholas Riley
 
 import re
 from os import path, sep, makedirs
-from __main__ import Bind
+from __init__ import Bind
 
 '''
 Generator
@@ -287,8 +287,6 @@ def parse(Main, gen):
 
 	seek = Bind({'next':Seeker('next'),'prev':Seeker('prev')})
 	#seek.next(0)
-	#print(seek.next.index)
-	#print(seek.next.value)
 
 	def obfuscateAdd(index):
 		if Main.config['obfuscate']:
@@ -317,13 +315,12 @@ def parse(Main, gen):
 	userVars = Main.userVars
 	seekprev = seek.prev
 	seeknext = seek.next
-	seeknextvalue = seek.next.value
-	seekprevvalue = seek.prev.value
-	seeknextindex = seek.next.index
-	seekprevindex = seek.prev.index
+	#seeknext.value = seek.next.value
+	#seekprev.value = seek.prev.value
+	#seeknext.index = seek.next.index
+	#seekprev.index = seek.prev.index
 	mget = Main.get
 	for syntax in mdata:
-		#print(syntax[0:3])
 		if mskip > 0:
 			#print('skip--------------------------'+syntax)
 			#print(mdata[count-2:count+2])
@@ -345,7 +342,6 @@ def parse(Main, gen):
 			count += 1
 			continue
 		elif syntax == '=':
-
 			if obfuscate:
 			#== , != , /= , += ,-=
 			#grab defined name
@@ -387,7 +383,7 @@ def parse(Main, gen):
 		elif syntax == 'if':
 			#next1 = mget(count + 1)
 			seekprev(count)
-			prev1 = seekprevvalue
+			prev1 = seekprev.value
 			if prev1 and prev1 == 'else':
 				insert(count, ' ')
 				mskip += 1
@@ -395,10 +391,11 @@ def parse(Main, gen):
 		else:
 			#seeknext(count)
 			seeknext(count)
-			next1 = seeknextvalue
+			#next1 = seeknext.value or seeknext.value
+			next1 = seeknext.value
+
 			if not next1:
 				break
-
 			if syntax in spaceRequired:
 				insert(count + 1, ' ')
 				#skipmsg = 'spaceRequired55'
@@ -408,7 +405,7 @@ def parse(Main, gen):
 				#opt -- remove extra semicolons
 				if next1 == '}':
 					#mskip += 1
-					mdata[count:seeknextindex + 1] = ['}']
+					mdata[count:seeknext.index + 1] = ['}']
 			elif syntax == 'case':
 				#if not string
 				if next1[0:3] != '@S_':
@@ -423,14 +420,14 @@ def parse(Main, gen):
 
 				#print('==========')
 				#print(mdata[count-5:count+5])
-				#print(mdata[seeknextindex])
+				#print(mdata[seeknext.index])
 
 				#grab defined function name
 				#is function call started: "function("
 				#if not add a space: "function foo(
 				if next1 and next1 != '(':
 					#set name
-					obfuscateAdd(seeknextindex)
+					obfuscateAdd(seeknext.index)
 					insert(count + 1, ' ')
 					mskip += 1
 					#skipmsg = '(   909'
