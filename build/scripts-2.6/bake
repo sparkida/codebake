@@ -1,4 +1,0 @@
-#!/home/aytch/inkdot/codebake/env/bin/python
-from codebake import Codebake
-Codebake()
-
