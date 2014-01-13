@@ -7,7 +7,7 @@ if platform.startswith('linux'):
 else:
 	require.append('pyreadline')
 setup(name='codebake',
-		version='1.1',
+		version='1.11',
 		description='Utility for quickly minifying and obfuscating JavaScript',
 		url='https://github.com/sparkida/codebake',
 		author='Nicholas Riley',
