@@ -119,12 +119,12 @@ class Codebake(object):
 		parser.add_argument('-e', '--extras', action='store_true', help='Remove extra commas and semicolons.')
 		parser.add_argument('-v', '--verbose', action='store_true', help='Show stats at end.')
 		parser.add_argument('-d', '--defaults', action='store_true', help='Sets the default attributes: -eou')
-		parser.add_argument('-k', '--chunk', metavar="\b=Number", type=int, help='Only strip newlines every (x) steps.(Useful when debugging)')
-		parser.add_argument('-s', '--string', metavar='\b=String', type=str, help='Read from string instead of file.')
-		parser.add_argument('-t', '--format', metavar='\b=Format', type=str, help='Set format for string: [js, css, html]. Default is "js".')
-		parser.add_argument('-w', '--writepath', metavar='\b=writepath', type=str, help='Write output to filepath.')
+		parser.add_argument('-k', '--chunk', metavar='Number', type=int, help='Only strip newlines every (x) steps.(Useful when debugging)')
+		parser.add_argument('-s', '--string', metavar='String', type=str, help='Read from string instead of file.')
+		parser.add_argument('-t', '--format', metavar='Format', type=str, help='Set format for string: [js, css, html]. Default is "js".')
+		parser.add_argument('-w', '--writepath', metavar='writepath', type=str, help='Write output to filepath.')
 		#parser.add_argument('-x', '--force', action='store_true', help='Forces overwriting and saving of files as well as the creation of directories.')
-		parser.add_argument('-f', '--filepath', metavar='\b=filepath', type=str, help='Path of file to bake.')
+		parser.add_argument('-f', '--filepath', metavar='filepath', type=str, help='Path of file to bake.')
 		#check opts and run the parser
 		self._parseOpts(0,1)
 
