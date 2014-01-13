@@ -1,3 +1,9 @@
-*.pyc
+*.py[cod]
+*.so
+*.egg
+*.egg-info
+build
+dist
+src
 .history
 
