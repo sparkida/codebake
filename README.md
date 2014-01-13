@@ -9,11 +9,11 @@ Installation
 
 **Using pip**
 ```bash
-pip install https://github.com/sparkida/codebake/raw/stable/src/codebake-1.1.zip
+pip install https://github.com/sparkida/codebake/raw/stable/src/codebake-1.11.zip
 ```
 **or**
 ```bash
-pip install https://github.com/sparkida/codebake/raw/stable/src/codebake-1.1.tar.gz
+pip install https://github.com/sparkida/codebake/raw/stable/src/codebake-1.11.tar.gz
 ```
 
 **Source build and install**
@@ -33,6 +33,6 @@ python setup.py install
 
 Download
 --------
-* [codebake-1.1.zip](https://github.com/sparkida/codebake/raw/stable/src/codebake-1.1.zip)
-* [codebake-1.1.tar.gz](https://github.com/sparkida/codebake/raw/stable/src/codebake-1.1.tar.gz)
+* [codebake-1.11.zip](https://github.com/sparkida/codebake/raw/stable/src/codebake-1.11.zip)
+* [codebake-1.11.tar.gz](https://github.com/sparkida/codebake/raw/stable/src/codebake-1.11.tar.gz)
  
