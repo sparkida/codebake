@@ -9,7 +9,7 @@ else:
 setup(name='codebake',
 		version='1.1',
 		description='Utility for quickly minifying and obfuscating JavaScript',
-		url='http://github.com/sparkida/augment',
+		url='https://github.com/sparkida/codebake',
 		author='Nicholas Riley',
 		author_email='nick@sparkida.com',
 		license='MIT',
