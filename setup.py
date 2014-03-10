@@ -1,20 +1,35 @@
 #!/usr/bin/env python
-from setuptools import setup, find_packages
+"""
+Codebake
+Clean CSS, HTML, and JavaScript Files
+v1.1
+Author: Nicholas Riley
+"""
+
+from setuptools import setup
 from sys import platform
 require = ['argparse']
 if platform.startswith('linux'):
 	require.append('readline')
 else:
 	require.append('pyreadline')
-setup(name='codebake',
+
+
+def read(fname):
+	return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+#from sys import platforms
+setup(name='Codebake',
 		version='1.11',
 		description='Utility for quickly minifying and obfuscating JavaScript',
 		url='https://github.com/sparkida/codebake',
 		author='Nicholas Riley',
 		author_email='nick@sparkida.com',
 		license='MIT',
-		scripts=['bake'],
-		platforms='Linux',
+		#long_description=read('README.md'),
+		entry_points={'console_scripts': ['bake = Codebake']},
 		install_requires=require,
-		packages=find_packages())
+		py_modules=['bake'],
+		packages=['Codebake'],
+		package_dir={'Codebake':'codebake'})
 

@@ -1,2 +1,0 @@
-#!/bin/bash
-python -m timeit -s'import subprocess' -n 12 -r 3 "subprocess.call(['bake', '-df', 'tests/jquery.js'])"
