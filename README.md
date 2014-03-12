@@ -5,7 +5,6 @@ Requirements
 ------------
 * Python 2.6, 2.7
 * Linux / Windows / Mac OS X
-* MongoDB [Installation...](http://docs.mongodb.org/manual/installation/)
 * **Make sure** you have the latestst version of [pip](http://pip.readthedocs.org/en/latest/installing.html)
 * **Make sure** you have the latest version of [setuptools](https://pypi.python.org/pypi/setuptools#installation-instructions)
 
