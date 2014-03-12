@@ -54,7 +54,7 @@ class Codebake(object):
 			'originalSize'		: None,
 			'originalPath'		: None,
 			'compileSize'		: None,
-			'compilePath'		: None
+			'outputPath'		: None
 			}
 	
 	
@@ -238,17 +238,15 @@ class Codebake(object):
 	#handle final closing operations
 	def complete(self):
 		if self.isatty:
-			if self.stats['compilePath'] == None:
+			if self.stats['outputPath'] == None:
 				print(''.join(self.data))
 			else:
-				print('File created: %s' % self.stats['compilePath'])
+				print('File created: %s' % self.stats['outputPath'])
 			if self.config['verbose']:
 				print(self._getStats())
 			if self.interactive:
 				self.restart()
 				return
-		else:
-			sys.stdout.write(''.join(self.data))
 		self.quit(1)
 
 	#get file name from input
