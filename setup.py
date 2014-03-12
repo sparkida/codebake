@@ -6,6 +6,7 @@ v1.1
 Author: Nicholas Riley
 """
 
+from os import path
 from setuptools import setup
 from sys import platform
 require = ['argparse']
@@ -16,7 +17,7 @@ else:
 
 
 def read(fname):
-	return open(os.path.join(os.path.dirname(__file__), fname)).read()
+	return open(path.join(path.dirname(__file__), fname)).read()
 
 #from sys import platforms
 setup(name='Codebake',
@@ -26,8 +27,8 @@ setup(name='Codebake',
 		author='Nicholas Riley',
 		author_email='nick@sparkida.com',
 		license='MIT',
-		#long_description=read('README.md'),
-		entry_points={'console_scripts': ['bake = Codebake']},
+		long_description=read('README.md'),
+		entry_points={'console_scripts': ['bake = Codebake.oven:Codebake']},
 		install_requires=require,
 		py_modules=['bake'],
 		packages=['Codebake'],

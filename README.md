@@ -1,38 +1,41 @@
 Codebake
 ========
 
-Installation
+Requirements
 ------------
-***Requirements***
 * Python 2.6, 2.7
-* Linux / Windows / Mac OS X(>=10.5)
+* Linux / Windows / Mac OS X
+* MongoDB [Installation...](http://docs.mongodb.org/manual/installation/)
+* **Make sure** you have the latestst version of [pip](http://pip.readthedocs.org/en/latest/installing.html)
+* **Make sure** you have the latest version of [setuptools](https://pypi.python.org/pypi/setuptools#installation-instructions)
 
-**Using pip**
-```bash
-pip install https://github.com/sparkida/codebake/raw/stable/src/codebake-1.11.zip
-```
-**or**
-```bash
-pip install https://github.com/sparkida/codebake/raw/stable/src/codebake-1.11.tar.gz
-```
+Get
+---
+First you can obviously download or clone this repository
 
-**Source build and install**
+**Download:**
+[codebake-master.zip](https://github.com/sparkida/codebake/archive/master.zip)
 
-From the codebake folder:
-* ***install***<br>
+**Clone:**
 ```
-python setup.py install
-```
-* ***build and install***<br>
-```
-python setup.py build
-```<br>
-```
-python setup.py install
+#https
+git clone https://github.com/sparkida/codebake
+#ssh
+git clone git@github.com:sparkida/codebake
 ```
 
-Download
---------
-* [codebake-1.11.zip](https://github.com/sparkida/codebake/raw/stable/src/codebake-1.11.zip)
-* [codebake-1.11.tar.gz](https://github.com/sparkida/codebake/raw/stable/src/codebake-1.11.tar.gz)
- 
+Install
+-------
+
+**Important**: be sure the codebake directory is the parent
+directory of the package containing a setup.py file
+```
+pip install ./codebake
+```
+
+
+Once Installed
+--------------
+1. Type "**bake**"
+2. Have fun!
+
