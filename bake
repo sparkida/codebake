@@ -1,4 +1,0 @@
-#!/usr/local/bin/env python
-from codebake import Codebake
-Codebake()
-

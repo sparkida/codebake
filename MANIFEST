@@ -1,6 +1,0 @@
-bake
-setup.py
-codebake/__init__.py
-codebake/__main__.py
-codebake/bake.py
-codebake/cli.py
