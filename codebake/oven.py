@@ -1,7 +1,7 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.0
+v1.2
 Author: Nicholas Riley
 """
 
@@ -16,8 +16,10 @@ from argparse import ArgumentParser
 
 		
 class Codebake(object):
+
 	msg = {
 			'noFile' 	: 'File not found!',
+			'noFormat' 	: 'Could not determine format, please set --format.',
 			'noEmpty' 	: 'File path cannot be empty!',
 			'noArgs' 	: 'Expecting argument: file path!',
 			'newline'	: '\n----------------------------\n'
@@ -38,7 +40,8 @@ class Codebake(object):
 	#TODO - seperate javascript specific functions
 	config = {
 			'filepath'			: False,
-			'format' 			: 'js',
+			'format' 			: '',
+			'recipe' 			: False,
 			#'string'			: False,
 			'force'				: False,
 			'saveHeader'		: False,
@@ -102,6 +105,7 @@ class Codebake(object):
 		parser.add_argument('-w', '--writepath', metavar='writepath', type=str, help='Write output to filepath.')
 		#parser.add_argument('-x', '--force', action='store_true', help='Forces overwriting and saving of files as well as the creation of directories.')
 		parser.add_argument('-f', '--filepath', metavar='filepath', type=str, help='Path of file to bake.')
+		parser.add_argument('-r', '--recipe', metavar='recipe', type=str, help='A recipe of files to bake(concatenate)')
 		#check opts and run the parser
 		self._parseOpts(0,1)
 
@@ -172,7 +176,6 @@ class Codebake(object):
 
 		#get args, #fail if no filepath provided
 		filepathFailed = False
-
 		#set arguments as settings
 		#try:
 		if self.interactive:
@@ -190,36 +193,44 @@ class Codebake(object):
 		if self.config['defaults']:
 			for arg in self.defaultOpts:
 				self.config[arg] = self.defaultOpts[arg]
-		"""
-		except:
-			if not self.isatty:
-				sys.stdout.write('0')
-				sys.exit(1)
-		"""
-		#print(self.config)
-		#turn into namespace
-		#self.config = Bind(self.config)
-		if 'string' not in self.config:
-			#lastly verify that there is a file
+
+		recipe = self.config['recipe']
+		files = None
+		if recipe:
+			with open(recipe, 'r') as fh:
+				recipeType = fh.readline().strip()
+				if recipeType[0] != '[':
+					raise StandardError('First line of recipe must specify a format, ie: [js] or [css]')
+				recipeType = recipeType[1:-1]
+				files = set([ x.strip() for x in fh.readlines() ])
+			#build main file	
+			composite = []
+			glue = composite.append
+			for f in files:
+				filename = '%s.%s' % (f, recipeType)
+				with open(filename, 'r') as fh:
+					#TODO - add in optional file markers
+					glue(''.join(fh.readlines()))
+			self.config['string'] = ''.join(composite)
+			self.config['format'] = recipeType
+		elif 'string' not in self.config:
+			#verify file
 			self.checkFileName()
-		#get new fogged code
-		"""just pass by reference, don't copy->i.e
-		init = {
-				'chunkCount': self.chunkCount,
-				'exchangeCount': self.exchangeCount,
-				'subsituteVars': self.subsituteVars,
-				'userVars': self.userVars,
-				'userStrings': self.userStrings,
-				'config': self.config,
-				'chunkCount': self.chunkCount,
-				'skip': self.skip,
-				'complete': self.complete,
-				'get': self.get,
-				'stats': self.stats
-				}
-		"""
-		from bake import fetch
-		fetch(self)
+
+		#bake...
+		ext = self.config['format']
+		if 'js' == ext:
+			from bake import BakeJS
+			BakeJS(self)
+		elif 'css' == ext:
+			from bake import BakeCSS
+			BakeCSS(self)
+		elif 'html' == ext or 'htm' == ext:
+			from bake import BakeHTML
+			BakeHTML(self)
+		else:
+			raise StandardError('Codebake > Invalid format')
+
 
 	def get(self, index):
 		try:
@@ -239,14 +250,17 @@ class Codebake(object):
 	def complete(self):
 		if self.isatty:
 			if self.stats['outputPath'] == None:
-				print(''.join(self.data))
+				print(self.data)
 			else:
 				print('File created: %s' % self.stats['outputPath'])
 			if self.config['verbose']:
+				#TODO - make into json for api front
 				print(self._getStats())
 			if self.interactive:
 				self.restart()
 				return
+		elif self.stats['outputPath'] == None:
+			print(self.data)
 		self.quit(1)
 
 	#get file name from input
@@ -263,6 +277,12 @@ class Codebake(object):
 			self.noFile('noEmpty')
 		elif not path.isfile(self.config['filepath']):
 			self.noFile('noFile')
+		if self.config['format'] == '':
+			filename, ext = path.splitext(self.config['filepath'])
+			if ext == '':
+				self.noFile('noFormat')
+			else:
+				self.config['format'] = ext[1:]
 
 	def _getStats(self):
 		string = ''
@@ -285,3 +305,44 @@ class Codebake(object):
 				sys.exit(msg)
 		else:
 			sys.exit("Goodbye!\n")
+
+
+
+class RecurseBake(object):
+	
+	"""
+	Dummy Codebake, for recursive bakes...
+	typically when baking HTML with inline CSS/JS
+	"""
+	
+	def __init__(self, data):
+		#holds all variables going to
+		self.parser = None
+		self.console = None
+		self.__reload()
+		self.config['string'] = data
+
+	def __reload(self):
+		#reset user settings
+		self.userStrings = {}
+		self.userVars = {}
+		self.exchangeCount = 0
+		self.skip = 0
+		self.count = 0
+		self.code = ''
+		self.data = ''
+		self.args = None
+		self.chunkCount = 0
+		self.stats = Codebake.stats.copy()
+		self.config = Codebake.config.copy()
+
+	def get(self, index):
+		try:
+			return self.data[index]
+		except IndexError:
+			return False
+	
+	def complete(self):
+		self.data = ''.join(self.data)
+
+

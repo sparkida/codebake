@@ -1,18 +1,19 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.0
+v1.2
 Author: Nicholas Riley
 """
 
 import re
 from os import path, sep, makedirs
 
-'''
-Generator
-Provides key creation and obfuscation values
-'''
 class Generator(object):
+	
+	"""
+	Provides key creation and obfuscation values
+	"""
+
 	#constants
 	maxRange = 26
 	upperCase = 65
@@ -68,23 +69,166 @@ class Generator(object):
 		#return character
 		return char
 			
+def BakeHTML(Main):
+	
+	"""
+	Optimize HTML and inline CSS and JS from file or string
 
-def fetch(Main):
+	options:
+	closeGaps
+	removeLineComments
+	removeDocComments
+	chunk - 1=1 rule per line
+	strip
+	"""
+
+	from oven import RecurseBake
+	config = Main.config
+	filepath = config['filepath']
+	regexList = {
+			'extractJS': 	r'(<script[^>]*?>)(.*?)(</script>)',
+			'extractCSS': 	r'(<style[^>]*?>)(.*?)(</style>)',
+			'squeeze':		r'(\r?\n)+|\t|\s(\s)+'
+		}
+
+	#build regex commands
+	searchJS = re.compile(r'%s' % regexList['extractJS'], re.MULTILINE | re.DOTALL)
+	searchCSS = re.compile(r'%s' % regexList['extractCSS'], re.MULTILINE | re.DOTALL)
+		
+
+	def extractJS(string):
+		head = string.group(1)
+		tail = string.group(3)
+		baker = RecurseBake(string.group(2))
+		#bake it
+		BakeJS(baker)
+		mark = '[@__CODEBAKE__%d__XbnsjZOL224]' % Main.count
+		Main.count += 1
+		Main.userStrings[mark] = '%s%s%s' % (head, baker.data, tail)
+		return mark
+
+	def extractCSS(string):
+		head = string.group(1)
+		tail = string.group(3)
+		baker = RecurseBake(string.group(2))
+		#bake it
+		BakeCSS(baker)
+		mark = '[@__CODEBAKE__%d__XbnsjZOL224]' % Main.count
+		Main.count += 1
+		Main.userStrings[mark] = '%s%s%s' % (head, baker.data, tail)
+		return mark
+
+
+	#read file if not string
+	if 'string' not in config:
+		#get file from arg
+		with open(filepath) as fp:
+			Main.data = re.sub(regexList['squeeze'], '', searchCSS.sub(extractCSS, searchJS.sub(extractJS, fp.read())))
+	else:
+		Main.data = re.sub(regexList['squeeze'], '', searchCSS.sub(extractCSS, searchJS.sub(extractJS, config['string'])))
+	
+	#replace stored Bakes
+	marks = Main.userStrings
+	for m in marks:
+		Main.data = Main.data.replace(m, marks[m])
+	#end
+	Main.complete()
+
+
+
+def BakeCSS(Main):
+	
+	"""
+	Optimize a CSS file or string
+
+	options:
+	closeGaps
+	trimSemiColons
+	removeLineComments
+	removeDocComments
+	chunk - 1=1 rule per line
+	strip
+	"""
 	
 	config = Main.config
+	filepath = config['filepath']
+	chunkSize = config['chunk']
+	regexList = {
+		'removeLineComments' 	: r'([\h\t]*/{2}.*[\r\n]?)',
+		'removeDocComments'		: r'(/\*.*?(?<=\*/))',
+		'closeGaps'				: r'([\w\]\*]\s+{)',
+		'strip'					: r'([{:,;]\s+[.#\'"\w])',
+		'trimSemiColons'		: r'(;(\s+)?})'
+		}
+	#build regex commands
+	regexMulti = re.compile(r'%s' % regexList['removeDocComments'], re.MULTILINE | re.DOTALL)
+	sub = re.sub
+	#read file if not string
+	if 'string' not in config:
+		#get file from arg
+		with open(filepath) as fp:
+			Main.data = regexMulti.sub('', fp.read())
+	else:
+		Main.data = regexMulti.sub('', config['string'])
+
+	def chunk(string):
+		if config['chunk'] == Main.chunkCount:
+			Main.chunkCount = 1
+			return '\n'
+		Main.chunkCount += 1
+
+	def trim(string):
+		seg = string.group(0)
+		return '%s%s' % (seg[0], seg[-1])
+
+	def trimLeft(string):
+		seg = string.group(0)
+		return seg[-1]
+
+	if chunkSize > 0:
+		if chunkSize > 1:
+			Main.data = sub('\n', chunk, Main.data)
+		else:
+			Main.data = sub('}', '}\n',
+							sub('\n', '', Main.data))
+	else:
+		Main.data = sub('\n', '', Main.data)
+	#remove line comments and dbg statements
+	Main.data = sub(regexList['strip'], trim,
+					sub(regexList['trimSemiColons'], trimLeft,
+						sub(regexList['closeGaps'], trim,
+							sub(regexList['removeLineComments'], '', Main.data.strip()))))
+	Main.complete()
 
 
-	if config['subsitute']:
+def BakeJS(Main):
+
+	"""
+	Optimize a CSS file or string
+
+	options:
+	removeLineComments
+	removeDocComments
+	chunk
+	obfuscate
+	subsitute
+	"""
+
+	config = Main.config
+	subsitute = config['subsitute']
+	obfuscate = config['obfuscate']
+	filepath = config['filepath']
+
+	if subsitute:
 		Main.userVars = Main.subsituteVars.copy()
 	gen = Generator()
 	genAlpha = gen.alpha
-	filepath = Main.config['filepath']
 	regexList = {
 		'removeDbg'				: r'(dbg\(.*\)[,\|;]?)',
 		'removeLineComments' 	: r'([\h\t]*/{2}.*[\r\n]?)',
 		'removeDocComments'		: r'(/\*.*?(?<=\*/))',
-		'replaceString'			: r'((?<!/)/[^*/\n\s].*?[^\\]/[igm]{0,3})|((?P<qt>[\'"]).*?(?<!\\)(?P=qt))|(([0-9]x[a-zA-Z0-9]+))|((?<![\w\$])([0-9]+\.?)+)'
-	}
+		'replaceString'			: r'([\(|=](?:\s+)?)((?<!/)/[^*/\n\s].*?[^\\]/[igm]{0,3})|((?P<qt>[\'"]).*?(?<!\\)(?P=qt))|(([0-9]x[a-zA-Z0-9]+))|((?<![\w\$])([0-9]+\.?)+)'
+		}
 
 	#build regex commands
 	regex = regexList['removeDbg'] + '|' + regexList['removeLineComments']
@@ -95,8 +239,13 @@ def fetch(Main):
 		#create an exchange reference
 		exchangeRef = '@S_%d' % Main.exchangeCount
 		Main.exchangeCount += 1
+		g2 = string.group(2)
 		#add to user stored strings
-		Main.userStrings[exchangeRef] = string.group(0)
+		if g2:
+			Main.userStrings[exchangeRef] = g2
+			return '%s%s' % (string.group(1), exchangeRef)
+		else:
+			Main.userStrings[exchangeRef] = string.group(0)
 		return exchangeRef
 	
 	def functionCapture(string):
@@ -109,43 +258,39 @@ def fetch(Main):
 		return string.group(0)
 	
 	def chunk(string):
-		if Main.config['chunk'] == Main.chunkCount:
+		if config['chunk'] == Main.chunkCount:
 			Main.chunkCount = 1
 			return ' @_n '
 		Main.chunkCount += 1
 
-
 	#read file if not string
-	if 'string' not in Main.config:
+	if 'string' not in config:
 		#get file from arg
 		with open(filepath) as fp:
 			#removeDocComments
 			Main.data = re.sub(regexList['replaceString'], stringExchange, fp.read())
 	else:
-		Main.data = re.sub(regexList['replaceString'], stringExchange, Main.config['string'])
+		Main.data = re.sub(regexList['replaceString'], stringExchange, config['string'])
 		#removeDocComments
 	
 	#remove line comments and dbg statements
-	Main.data = regexMulti.sub('', Main.data)
-	Main.data = re.sub(regex, '', Main.data)
-	#Main.data = re.sub(regexList['replaceRegex'], stringExchange, Main.data)
+	Main.data = re.sub(regex, '', 
+					regexMulti.sub('', Main.data))
 
-	if config['obfuscate']:
+	if obfuscate:
 		#capture function params
-		#TODO
-		#TODO
-		#TODO
 		#TODO - capture through  iterative process with an id so we can identify and
 		#instantiate unique generators per function or similar workaround
 		Main.data = re.sub(r'function\((.*?\))', functionCapture, Main.data)
-	#if not Main.config['whitespace']:
-	#Main.data = re.sub(' ', ' @_s ', Main.data)
-	#Main.data = re.sub('\t', ' @_t ', Main.data)
+	'''
+	if not Main.config['whitespace']:
+		Main.data = re.sub(' ', ' @_s ', Main.data)
+		Main.data = re.sub('\t', ' @_t ', Main.data)
+	'''
 	
-	if Main.config['chunk']:
+	if config['chunk']:
 		Main.data = re.sub('\n', chunk, Main.data)
-	#mark characters
-	#seperate by anything that isn't valid character
+	#mark characters, seperate by anything that isn't valid character
 	Main.data = re.sub(r'([^\w\d_@$])', r' \1 ', Main.data).split()
 
 	#read string data
@@ -179,7 +324,7 @@ def fetch(Main):
 			]
 
 	blocked = set(spaceRequired + dualSpaceRequired + Generator.block + blockList)
-	defaults = {} if not config['subsitute'] else Main.subsituteVars.copy()
+	defaults = {} if not subsitute else Main.subsituteVars.copy()
 	__set = set()
 	__setAdd = __set.add
 	operators = set([x for x in logic + assignment if x not in __set and not __setAdd(x)])
@@ -206,28 +351,6 @@ def fetch(Main):
 			r'\\'
 			])
 	blockList = set(blockList)
-	'''
-	def findTerminator(match, captureSymbol, index):
-		capture = False
-		func_levels = 0
-		while True:
-			test = Main.get(index)
-			if test:
-				if test == match:
-					if func_levels == 0:
-						return index
-					else:
-						func_levels -= 1
-				elif test == captureSymbol:
-					if not capture:
-						capture = True
-					else:
-						func_levels += 1
-			else:
-				return False
-			#increment by one
-			index += 1
-	'''
 	skipBlock = set([
 			' ',
 			'\r',
@@ -238,7 +361,6 @@ def fetch(Main):
 			#'@_t'
 			])
 
-
 	#create classes to dunamically handle seeked indexes
 	class Seeker(object):
 		def __init__(self, instance = ''):
@@ -246,9 +368,6 @@ def fetch(Main):
 			self.lastIndex = None
 			self.value = False
 			self.instance = instance
-			#self.count = 0
-
-			#set the typeof Seeker object: prev | next
 
 		def __call__(self, index = int, skip = 0):
 			if self.lastIndex is not None and index == self.lastIndex:
@@ -262,7 +381,6 @@ def fetch(Main):
 			if self.instance == 'prev':
 				while self.index - 1 > 0:
 					self.index -= 1
-					# for heere ### we just want to do Main.data[self.index] and error
 					self.value = Main.data[self.index]
 					if self.value in skipBlock:
 						continue
@@ -274,7 +392,6 @@ def fetch(Main):
 			else:
 				while True:
 					self.index += 1
-					# for heere ### we just want to do Main.data[self.index] and error
 					try:
 						self.value = Main.data[self.index]
 					except IndexError:
@@ -290,13 +407,8 @@ def fetch(Main):
 	seek = dict({'next':Seeker('next'),'prev':Seeker('prev')})
 	count = 0
 	genAlpha = gen.alpha
-	#Main.data = Main.data
 	mget = Main.get
-	#Main.skip = Main.skip
 	insert = Main.data.insert
-	#userStrings = Main.userStrings
-	#userVars = Main.userVars
-	obfuscate = Main.config['obfuscate']
 	seekprev = seek['prev']
 	seeknext = seek['next']
 	
@@ -316,18 +428,13 @@ def fetch(Main):
 					if not next1 or next1 != ':' or prev == '?':
 						if value not in Main.userVars:
 							Main.userVars[value] = genAlpha()
-						#Main.data[index] = Main.userVars[value]
-		
+
 	for syntax in Main.data:	
 		if Main.skip > 0:
-			#print('skip--------------------------'+syntax)
-			#print(Main.data[count-2:count+2])
-			#print(#skipmsg)
 			Main.skip -= 1
 			count += 1
 			continue
 		if syntax[0] == '@':
-			#print(syntax)
 			_syntax3 = syntax[0:3]
 			if _syntax3 == '@S_':
 				Main.data[count] = Main.userStrings[syntax]
@@ -342,11 +449,7 @@ def fetch(Main):
 			continue
 		elif syntax == '=':
 			if obfuscate:
-			#== , != , /= , += ,-=
-			#grab defined name
-			#if count == 0:
-			#	Main.quit('File cannot begin with =')
-			#el
+				#== , != , /= , += ,-=
 				dist = 0
 				skip = defName = False
 				while count - (dist + 1) > 0:
@@ -355,7 +458,6 @@ def fetch(Main):
 					if defName[0:3] == '@S_':
 						skip = True
 						break
-						
 					if defName != ' ' and defName != '\n' and defName not in operators and defName not in skipChars:
 						break
 				if skip or not defName:
@@ -365,34 +467,21 @@ def fetch(Main):
 			#TODO - add characters to skip
 			count += 1
 			continue
-		elif config['subsitute'] and syntax in defaults:
+		elif subsitute and syntax in defaults:
 			Main.data[count] = Main.userVars[syntax]
 		elif syntax in dualSpaceRequired:
-			#if Main.data[count-1] != ' ':
-			#	insert(count, ' ')
-			#	Main.skip += 1
-			#TODO - continue this logic ^
-
 			insert(count, ' ')
 			insert(count + 2, ' ')
 			Main.skip += 2
-			#skipmsg = 'dualspace12'
 		elif syntax == 'if':
-			#next1 = mget(count + 1)
 			seekprev(count)
 			prev1 = seekprev.value
 			if prev1 and prev1 == 'else':
 				insert(count, ' ')
 				Main.skip += 1
-				#skipmsg = 'if12'
 		else:
-			#seeknext(count)
 			seeknext(count)
-			#next1 = seeknext.value or seeknext.value
 			next1 = seeknext.value
-			#print(syntax)
-			#print(next1)
-
 			if not next1:
 				break
 			if syntax in spaceRequired:
@@ -412,14 +501,8 @@ def fetch(Main):
 					Main.skip += 1
 					#skipmsg = '@S_ 88'
 			elif syntax == 'function':
-				#TODO -- URGER
-				#TODO -- URGER
-				#TODO -- URGER --- MAKE SUB GENERATOR right before obfuscation
+				#TODO -- URGENT --- MAKE SUB GENERATOR right before obfuscation
 				#to re generate non-blocked list of stored uservar references
-
-				#print('==========')
-				#print(Main.data[count-5:count+5])
-				#print(Main.data[seeknext.index])
 
 				#grab defined function name
 				#is function call started: "function("
@@ -431,16 +514,16 @@ def fetch(Main):
 					Main.skip += 1
 					#skipmsg = '(   909'
 		count += 1
+	pop = Main.data.pop
 
 	#TODO TODO TODO fix!
 	while True:
 		if Main.data[-1] == '@_n':
-			Main.data.pop()
+			pop()
 		else:
 			break
 
-
-	if config['obfuscate']:
+	if obfuscate:
 		count = 0
 		#end for
 		#Main.complete()
@@ -518,6 +601,7 @@ def fetch(Main):
 		Main.stats['originalSize'] = origSize
 		Main.stats['percent'] = int(round(100 / (float(Main.stats['originalSize']) / float((Main.stats['originalSize'] - Main.stats['compileSize'])))))
 	#complete the clean
+	Main.data = ''.join(Main.data)
 	Main.complete()
 
 
