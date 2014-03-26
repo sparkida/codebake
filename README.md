@@ -1,5 +1,24 @@
 Codebake
 ========
+The fastest and most reliable JS, CSS and HTML optimizer around.
+
+Features
+--------
+* **Strip** - Codebake automatically strips doc and inline comments as well as extra whitespace characters: space, tab, newline (This will be made optional in next release update **v1.4**)
+* **Chunking** - A really useful feature for developers: **Chunking** expedites debugging JavaScript and can neatly structure CSS files to be more readable by adding line breaks every "**x**" amount of steps, otherwise all baked code is returned in a single line, and there is no efficient way to hunt down JS errors.
+* **Obfuscate** - When baking JavaScript files, obfuscation helps to reduce size (average 20-40%) and eliminates readability, ideal for production environments.
+* **Extras** - Whether baking JavaScript or CSS files, the **extras** feature will remove any unneccessary semicolons and commas.
+* **Recipes** - Codebake will process a Manifest like file called a "*recipe*". Recipe files are very basic:
+```
+#start by defining the format to use
+[js]
+#then list your files in the desired order, excluding extensions
+#so if we had files: "head.js, body.js, tail.js"
+head
+body
+tail
+#presto!
+```
 
 Requirements
 ------------
@@ -10,7 +29,7 @@ Requirements
 
 Get
 ---
-First you can obviously download or clone this repository
+Download or clone this repository
 
 **Download:**
 [codebake-master.zip](https://github.com/sparkida/codebake/archive/master.zip)
@@ -37,4 +56,11 @@ Once Installed
 --------------
 1. Type "**bake**"
 2. Have fun!
+
+
+
+
+
+
+
 
