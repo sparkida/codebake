@@ -73,6 +73,7 @@ class Codebake(object):
 		#reset user settings
 		self.userStrings = {}
 		self.userVars = {}
+		self.userVarsFreq = None
 		self.exchangeCount = 0
 		self.skip = 0
 		self.count = 0

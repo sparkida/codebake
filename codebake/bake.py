@@ -274,8 +274,7 @@ def BakeJS(Main):
 		#removeDocComments
 	
 	#remove line comments and dbg statements
-	Main.data = re.sub(regex, '', 
-					regexMulti.sub('', Main.data))
+	Main.data = regexMulti.sub('', re.sub(regex, '', Main.data))
 
 	if obfuscate:
 		#capture function params
