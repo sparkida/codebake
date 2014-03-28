@@ -1,7 +1,7 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.2
+v1.21
 Author: Nicholas Riley
 """
 
@@ -72,7 +72,7 @@ class Codebake(object):
 	def __reload(self):
 		#reset user settings
 		self.userStrings = {}
-		self.userVars = {}
+		self.userVars = set()
 		self.userVarsFreq = None
 		self.exchangeCount = 0
 		self.skip = 0
@@ -345,5 +345,9 @@ class RecurseBake(object):
 	
 	def complete(self):
 		self.data = ''.join(self.data)
+
+
+if __name__ == '__main__':
+	sys.exit(Codebake())
 
 

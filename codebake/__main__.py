@@ -2,7 +2,7 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.1
+v1.21
 Author: Nicholas Riley
 """
 

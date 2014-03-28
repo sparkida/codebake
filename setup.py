@@ -21,7 +21,7 @@ def read(fname):
 
 #from sys import platforms
 setup(name='Codebake',
-		version='1.2',
+		version='1.21',
 		description='Utility for quickly minifying and obfuscating JavaScript',
 		url='https://github.com/sparkida/codebake',
 		author='Nicholas Riley',

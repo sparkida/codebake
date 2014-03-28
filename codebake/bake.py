@@ -1,12 +1,13 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.2
+v1.21
 Author: Nicholas Riley
 """
 
 import re
 from os import path, sep, makedirs
+
 
 class Generator(object):
 	
@@ -28,7 +29,7 @@ class Generator(object):
 	block = ['in','do','if']
 
 	def __init__(self):
-		self.used = []
+		self.used = set()
 		self.block = set(self.__class__.block)
 
 	def alpha(self):
@@ -64,11 +65,13 @@ class Generator(object):
 				self.useLower = False
 				if self.rounds == 26:
 					self.useUpper = true
-		
-		self.used.append(char)
-		#return character
+		#recursively return character
+		if char in self.used:
+			return self.alpha()
+		self.used.add(char)
 		return char
 			
+
 def BakeHTML(Main):
 	
 	"""
@@ -214,19 +217,29 @@ def BakeJS(Main):
 	subsitute
 	"""
 
+
+
 	config = Main.config
 	subsitute = config['subsitute']
 	obfuscate = config['obfuscate']
 	filepath = config['filepath']
-
+	
+	'''
+	***DEP***
 	if subsitute:
-		Main.userVars = Main.subsituteVars.copy()
-	gen = Generator()
+		for n in Main.subsituteVars.copy():
+			addVar(n)
+			userVarsFreq[n] += 1
+	'''
+	from collections import defaultdict
+	gen = Generator()	
 	genAlpha = gen.alpha
+	userVars = Main.userVars = defaultdict(int)
+	subsituteVars = Main.subsituteVars
 	regexList = {
 		'removeDbg'				: r'(dbg\(.*\)[,\|;]?)',
 		'removeLineComments' 	: r'([\h\t]*/{2}.*[\r\n]?)',
-		'removeDocComments'		: r'(/\*.*?(?<=\*/))',
+		'removeDocComments'		: r'(/\*.+?\*/)',
 		'replaceString'			: r'([\(|=](?:\s+)?)((?<!/)/[^*/\n\s].*?[^\\]/[igm]{0,3})|((?P<qt>[\'"]).*?(?<!\\)(?P=qt))|(([0-9]x[a-zA-Z0-9]+))|((?<![\w\$])([0-9]+\.?)+)'
 		}
 
@@ -253,8 +266,7 @@ def BakeJS(Main):
 		match = re.sub(r'[^\w]',' \r',string.group(1)).split()
 		if len(match):
 			for name in match:
-				if name not in Main.userVars:					
-					Main.userVars[name] = genAlpha()
+				userVars[name] += 1
 		return string.group(0)
 	
 	def chunk(string):
@@ -267,21 +279,18 @@ def BakeJS(Main):
 	if 'string' not in config:
 		#get file from arg
 		with open(filepath) as fp:
-			#removeDocComments
 			Main.data = re.sub(regexList['replaceString'], stringExchange, fp.read())
 	else:
 		Main.data = re.sub(regexList['replaceString'], stringExchange, config['string'])
-		#removeDocComments
 	
-	#remove line comments and dbg statements
-	Main.data = regexMulti.sub('', re.sub(regex, '', Main.data))
+	#remove comments and dbg statements
+	Main.data = re.sub(regex, '', regexMulti.sub('', Main.data))
 
 	if obfuscate:
-		#capture function params
-		#TODO - capture through  iterative process with an id so we can identify and
-		#instantiate unique generators per function or similar workaround
 		Main.data = re.sub(r'function\((.*?\))', functionCapture, Main.data)
+		
 	'''
+	#strip whitespace !only when strict
 	if not Main.config['whitespace']:
 		Main.data = re.sub(' ', ' @_s ', Main.data)
 		Main.data = re.sub('\t', ' @_t ', Main.data)
@@ -291,7 +300,6 @@ def BakeJS(Main):
 		Main.data = re.sub('\n', chunk, Main.data)
 	#mark characters, seperate by anything that isn't valid character
 	Main.data = re.sub(r'([^\w\d_@$])', r' \1 ', Main.data).split()
-
 	#read string data
 	spaceRequired = [
 		'void',
@@ -411,24 +419,24 @@ def BakeJS(Main):
 	seekprev = seek['prev']
 	seeknext = seek['next']
 	
-	def obfuscateAdd(index):
+	def obfuscateAdd(index):	
 		"""add main data value from index, to obfuscate list"""
 		if obfuscate:
 			value = Main.data[index]
-			v1 = value[0:1]
-			if v1 != '/' and v1 != "'" and v1 != '"' and value not in blocked:
-				seekprev(index)
-				prev = seekprev.value
-				#make sure it isn't part of an object
-				#if it is a ternary then obfuscate
-				if prev and prev != '.':
-					seeknext(index)
-					next1 = seeknext.value
-					if not next1 or next1 != ':' or prev == '?':
-						if value not in Main.userVars:
-							Main.userVars[value] = genAlpha()
+			if value in blocked:
+				return
+			seekprev(index)
+			prev = seekprev.value
+			#make sure it isn't part of an object
+			#if it is a ternary then obfuscate
+			if prev and prev != '.':
+				seeknext(index)
+				next1 = seeknext.value
+				if not next1 or next1 != ':' or prev == '?':
+					userVars[value] += 1
 
-	for syntax in Main.data:	
+
+	for syntax in Main.data:
 		if Main.skip > 0:
 			Main.skip -= 1
 			count += 1
@@ -454,20 +462,22 @@ def BakeJS(Main):
 				while count - (dist + 1) > 0:
 					dist += 1
 					defName = Main.data[count - dist]
+					#print('%s\t%s' % (syntax, defName))
 					if defName[0:3] == '@S_':
 						skip = True
 						break
-					if defName != ' ' and defName != '\n' and defName not in operators and defName not in skipChars:
+					if defName == ' ' or defName == '\n':
+						break
+					if defName not in operators and defName not in skipChars:
 						break
 				if skip or not defName:
 					continue
 				obfuscateAdd(count - dist)
 		elif syntax != '=' and syntax != ';' and (syntax[0:1] in operators or syntax[0:1] in skipChars):
-			#TODO - add characters to skip
 			count += 1
 			continue
 		elif subsitute and syntax in defaults:
-			Main.data[count] = Main.userVars[syntax]
+			Main.data[count] = subsituteVars[syntax]
 		elif syntax in dualSpaceRequired:
 			insert(count, ' ')
 			insert(count + 2, ' ')
@@ -483,85 +493,86 @@ def BakeJS(Main):
 			next1 = seeknext.value
 			if not next1:
 				break
+			if next1 == ';' or next1 == ',':
+				#spare the seek if we can
+				seekprev(count)
+				prev1 = seekprev.value
+				if prev1 == ',':
+					userVars[syntax] += 1
+					
 			if syntax in spaceRequired:
 				insert(count + 1, ' ')
-				#skipmsg = 'spaceRequired55'
 				#and skip all
 				Main.skip += 1
-			elif config['extras'] and syntax == ';':
+			elif syntax == ';':
 				#opt -- remove extra semicolons
-				if next1 == '}':
-					#Main.skip += 1
+				if config['extras'] and next1 == '}':
 					Main.data[count:seeknext.index + 1] = ['}']
+
 			elif syntax == 'case':
 				#if not string
 				if next1[0:3] != '@S_' or Main.userStrings[next1].isdigit():
 					insert(count + 1, ' ')
 					Main.skip += 1
-					#skipmsg = '@S_ 88'
+			
 			elif syntax == 'function':
-				#TODO -- URGENT --- MAKE SUB GENERATOR right before obfuscation
-				#to re generate non-blocked list of stored uservar references
-
-				#grab defined function name
-				#is function call started: "function("
-				#if not add a space: "function foo(
 				if next1 and next1 != '(':
 					#set name
 					obfuscateAdd(seeknext.index)
 					insert(count + 1, ' ')
 					Main.skip += 1
-					#skipmsg = '(   909'
 		count += 1
-	pop = Main.data.pop
-
-	#TODO TODO TODO fix!
-	while True:
-		if Main.data[-1] == '@_n':
-			pop()
-		else:
-			break
 
 	if obfuscate:
+		'''
+		create a defaultdict that starts a set
+		which we'll use to keep an index of items
+		to be obfuscated. We will then be able to 
+		calculate the total size of the indexes
+		(all the indexes of a single set added up),
+		so if we had an index 'myValue' with set([0, 2, 18, 34])
+		we would calculate 'myValue'.__len__() * len(set)
+		as opposed to prioritizing the largest set(amount of indexes)
+		'''
+		exchangeVar = defaultdict(set)
 		count = 0
-		#end for
-		#Main.complete()
 		skipChars.update([';','\n'] + list(operators))
-		blocked = list(blocked)
-		blocked += [x for x in ['case','new', 'void 0', 'if', 'else'] if x not in blocked]
-		blocked2 = set(list(blockList) + list(dualSpaceRequired) + list(spaceRequired) + defaults.values())
-		#print(gen.used)
+		blocked = set(list(blockList) + ['case','new', 'void 0', 'if', 'else'] + list(dualSpaceRequired) + list(spaceRequired) + defaults.values())
 		for syntax in Main.data:
-			#prev = mget(count - 1)
-			#why blocked and blocked2 ? y not join ? because we put the most likely to catch first
-			#we hope it never needs to get to blocked2 or blocked for that matter
-			if not syntax.isdigit() and syntax[0:1] not in skipChars\
-					and syntax not in blocked and syntax not in blocked2:
-				if syntax in Main.userVars:
+			if syntax.isdigit() or syntax[0:1] in skipChars or syntax in blocked:
+				count += 1
+				continue
+			if syntax in userVars:
+				dist = 0
+				while True:
+					dist += 1
+					prev = Main.data[count - dist]
+					if not prev or (prev != ' ' and prev!= '\n'):
+						break
+				#make sure it isn't part of an object
+				#if it is a ternary then obfuscate
+				if prev and prev != '.':
 					dist = 0
 					while True:
 						dist += 1
-						prev = Main.data[count - dist]
-						if not prev or (prev != ' ' and prev!= '\n'):
+						next1 = mget(count + dist)
+						if not next1 or (next1 != ' ' and next1 != '\n'):
 							break
-					#make sure it isn't part of an object
-					#if it is a ternary then obfuscate
-					if prev and prev != '.':
-						dist = 0
-						while True:
-							dist += 1
-							next1 = mget(count + dist)
-							if not next1 or (next1 != ' ' and next1 != '\n'):
-								break
-
-						if not next1 or next1 != ':' or prev == '?':
-							Main.data[count] = Main.userVars[syntax]
-						elif next1 == ':':
-							#check for object
-							if prev not in [',','{']:
-								Main.data[count] = Main.userVars[syntax]
-			#increase by one
+					if next1 != ':' or prev == '?':
+						exchangeVar[syntax].add(count)
+					elif next1 == ':':
+						if prev == ',' or prev == '{':
+							pass
+						else:
+							exchangeVar[syntax].add(count)
 			count += 1
+		#set optimal vars
+		userVarsFreq = [ (len(v) * k.__len__(), k) for k,v in exchangeVar.iteritems() ] 
+		userVarsFreq.sort(reverse=True)
+		for v,k in userVarsFreq:
+			exchange = genAlpha()
+			for pointer in exchangeVar[k]:
+				Main.data[pointer] = exchange
 	#final string!!!
 	Main.data = ''.join(Main.data)
 	
