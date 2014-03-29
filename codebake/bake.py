@@ -1,13 +1,14 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.21
+v1.22
 Author: Nicholas Riley
 """
 
 import re
 from os import path, sep, makedirs
 
+__version__ = '1.22'
 
 class Generator(object):
 	
@@ -290,11 +291,19 @@ def BakeJS(Main):
 			Main.data = fp.read()
 	else:
 		Main.data = config['string']
+
+	
+	'''
+	reg = re.compile(r'', re.MULTILINE | re.DOTALL)
+	reg.sub(exchangeTernary
+	return
+	'''
 	
 	if config['saveHeader']:
 		regexMulti = re.compile(regexList['removeDocComments'], re.MULTILINE | re.DOTALL)
 		match = regexMulti.search(Main.data)
-		header = re.sub(r'\s(\s)+', ' ', match.group(0))
+		if match:
+			header = re.sub(r'\s(\s)+', ' ', match.group(0))
 
 	#replace strings, remove comments and stripx
 	Main.data = re.sub(regex, '', 
@@ -303,6 +312,8 @@ def BakeJS(Main):
 
 	if obfuscate:
 		Main.data = re.sub(r'function\((.*?\))', functionCapture, Main.data)
+	
+
 		
 	'''
 	#strip whitespace !only when strict
@@ -589,7 +600,7 @@ def BakeJS(Main):
 			for pointer in exchangeVar[k]:
 				Main.data[pointer] = exchange
 	#save the header!
-	if config['saveHeader']:
+	if config['saveHeader'] and header:
 		Main.data.insert(0, header)
 	#final string!!!
 	Main.data = ''.join(Main.data)
