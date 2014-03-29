@@ -1,0 +1,2 @@
+#!/bin/bash
+python -m timeit -s'import subprocess' -n 12 -r 3 "subprocess.call(['uglifyjs', 'tests/jquery.js', '-cm'])"

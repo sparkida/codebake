@@ -1,0 +1,2 @@
+#!/bin/bash
+python -m timeit -s'import subprocess' -n 12 -r 3 "subprocess.call(['php','tests/bench_jsqueeze.php', 'tests/jquery.js'])"

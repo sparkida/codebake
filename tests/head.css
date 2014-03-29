@@ -1,0 +1,21 @@
+/* line 4, ../../../../../../compass/spk/sass/styles.scss */
+body {
+  width: auto;
+  height: auto;
+  min-height: 300px;
+  font-size: 62.5%;
+  overflow-x: hidden;
+  font-family: "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
+  /*background: url(../images/sid<F5>ebar.png) #fbfdfe 80px 0 repeat-y;*/
+}
+
+/* line 14, ../../../../../../compass/spk/sass/styles.scss */
+.js body {
+  visibility: hidden;
+}
+
+/* line 18, ../../../../../../compass/spk/sass/styles.scss */
+#nav {
+  display: block;
+  border-right: 1px solid #CCC !important;
+  }

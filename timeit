@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+import sys
+from timeit import timeit, Timer
+
+def run():
+	stat = Timer("call(['python','codebake', '-df', '%s'])" % sys.argv[1], 'from subprocess import call').repeat(repeat=3, number=1)
+	#stat = timeit("call(['python','codebake', '-df', '%s'])" % sys.argv[1], setup='from subprocess import call', number=1)
+	print(stat)
+	return 0
+	
+
+if "__main__" == __name__:
+	sys.exit(run())
+
+
