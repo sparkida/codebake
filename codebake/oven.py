@@ -32,9 +32,9 @@ class Codebake(object):
 			}
 	#if -d opt overwrite config with defaultOpts
 	defaultOpts = {
-			#'saveHeader' 	: True,
 			'subsitute'		: True,
 			'obfuscate'		: True,
+			'saveHeader'	: True,
 			'extras'		: True
 			}
 	#TODO - seperate javascript specific functions
@@ -42,6 +42,7 @@ class Codebake(object):
 			'filepath'			: False,
 			'format' 			: '',
 			'recipe' 			: False,
+			'stripx'			: False,
 			#'string'			: False,
 			'force'				: False,
 			'saveHeader'		: False,
@@ -93,20 +94,36 @@ class Codebake(object):
 				description='Clean CSS, HTML, and JavaScript files.',
 				epilog='',
 				usage='codebake filepath\n\tcodebake [OPTIONS] [-f filepath]\n\tcodebake filepath [OPTIONS]')
-
-		#parser.add_argument('-g', '--saveHeader', action='store_true', help='Saves only first comment of file. Implements -r.')
-		parser.add_argument('-o', '--obfuscate', action='store_true', help='Use obfuscation.')
-		parser.add_argument('-u', '--subsitute', action='store_true', help='Replace [true, false, undefined] with [!0, !1, void 0]')
-		parser.add_argument('-e', '--extras', action='store_true', help='Remove extra commas and semicolons.')
-		parser.add_argument('-v', '--verbose', action='store_true', help='Show stats at end.')
-		parser.add_argument('-d', '--defaults', action='store_true', help='Sets the default attributes: -eou')
-		parser.add_argument('-k', '--chunk', metavar='Number', type=int, help='Only strip newlines every (x) steps.(Useful when debugging)')
-		parser.add_argument('-s', '--string', metavar='String', type=str, help='Read from string instead of file.')
-		parser.add_argument('-t', '--format', metavar='Format', type=str, help='Set format for string: [js, css, html]. Default is "js".')
-		parser.add_argument('-w', '--writepath', metavar='writepath', type=str, help='Write output to filepath.')
-		#parser.add_argument('-x', '--force', action='store_true', help='Forces overwriting and saving of files as well as the creation of directories.')
-		parser.add_argument('-f', '--filepath', metavar='filepath', type=str, help='Path of file to bake.')
-		parser.add_argument('-r', '--recipe', metavar='recipe', type=str, help='A recipe of files to bake(concatenate)')
+		add = parser.add_argument
+		add('-o', '--obfuscate', action='store_true', 
+				help='Use obfuscation.')
+		add('-u', '--subsitute', action='store_true',
+				help='Replace [true, false, undefined] with [!0, !1, void 0]')
+		add('-e', '--extras', action='store_true',
+				help='Remove extra commas and semicolons.')
+		add('-v', '--verbose', action='store_true', 
+				help='Show stats at end.')
+		add('-d', '--defaults', action='store_true', 
+				help='Sets the default optimal attributes; same as -oue')
+		add('-i', '--save-header', action='store_true', 
+				help='Save first document comment; for licensing, about author, general info, etc...')
+		add('-k', '--chunk', metavar='NUMBER', type=int, 
+				help='Only strip newlines every (x) steps.(Useful when debugging)')
+		add('-s', '--string', metavar='STRING', type=str, 
+				help='Read input from string instead of file.')
+		add('-t', '--format', metavar='EXT', type=str, 
+				help='Set format for string(-s): [js, css, html]. Default is "js".')
+		add('-x', '--stripx', metavar='VALUES...', type=str,
+				help='Will remove all function calls to a list of objects: -x"dbg,console.log"'\
+					 'will remove all dbg() and console.log() calls')
+		add('-w', '--writepath', metavar='FILEPATH', type=str,
+				help='Write output to filepath.')
+		add('-f', '--filepath', metavar='FILEPATH', type=str, 
+				help='Path of file to bake.')
+		add('-r', '--recipe', metavar='FILEPATH', type=str, 
+				help='A recipe of files to bake(concatenate)')
+		#parser.add_argument('-', '--force', action='store_true', 
+				#help='Forces overwriting and saving of files as well as the creation of directories.')
 		#check opts and run the parser
 		self._parseOpts(0,1)
 

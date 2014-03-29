@@ -1,0 +1,359 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="user-scalable=0, initial-scale=0.5">
+	<title>Sparkida Network</title>
+
+<link href="http://fonts.googleapis.com/css?family=Titillium+Web:300,600" rel="stylesheet" type="text/css"><link rel="stylesheet" href="//s1.sparkida/sparkida/css/reset.css?v=1395760412">
+<link rel="stylesheet" href="//s1.sparkida/sparkida/css/styles.css?v=1395760412">
+<link rel="stylesheet" href="//s1.sparkida/sparkida/css/view.css?v=1395760412">
+<!-- Load Spk settings  //-->
+<style type="text/css">
+/* line 5, ../../../../../../compass/sparkida/sass/styles.scss */
+body {
+  width: auto;
+  height: auto;
+  min-height: 300px;
+  font-size: 62.5%;
+  overflow-x: hidden;
+  font-family: "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
+  background: #22A7FF;
+}
+
+/* line 15, ../../../../../../compass/sparkida/sass/styles.scss */
+.js body {
+  visibility: hidden;
+}
+
+/* line 19, ../../../../../../compass/sparkida/sass/styles.scss */
+a {
+  text-decoration: none;
+}
+
+/* line 23, ../../../../../../compass/sparkida/sass/styles.scss */
+#nav {
+  display: none;
+  overflow: hidden;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 250px;
+  font-size: 20px;
+  background: #FFF;
+  z-index: 100;
+}
+
+/* line 36, ../../../../../../compass/sparkida/sass/styles.scss */
+body a {
+  cursor: pointer;
+}
+
+/* line 40, ../../../../../../compass/sparkida/sass/styles.scss */
+#identity div {
+  display: block;
+  font-size: 20px;
+  margin-top: 20px;
+  color: #999;
+  font-family: 'Titillium Web', Arial, Helvetica, sans;
+}
+
+/* line 48, ../../../../../../compass/sparkida/sass/styles.scss */
+#title {
+  display: block;
+  padding: 10px 10px 20px 10px;
+  color: #444;
+  font-size: 26px;
+  font-family: 'Titillium Web', Arial, Helvetica, sans;
+  /*background: url(../img/panel.png) -60px -55px no-repeat;*/
+  background: url(../img/conTopBot.png) -65px -42px no-repeat;
+}
+/* line 56, ../../../../../../compass/sparkida/sass/styles.scss */
+#title a {
+  text-decoration: none;
+  color: #19446B;
+}
+/* line 59, ../../../../../../compass/sparkida/sass/styles.scss */
+#title a:hover {
+  color: #22A7FF;
+}
+
+/* line 66, ../../../../../../compass/sparkida/sass/styles.scss */
+#identity ul {
+  margin-top: 10px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+/* line 70, ../../../../../../compass/sparkida/sass/styles.scss */
+#identity li {
+  color: #666;
+  list-style: disc inside;
+  font-weight: normal;
+  font-size: 12px;
+}
+
+/* line 78, ../../../../../../compass/sparkida/sass/styles.scss */
+#menu {
+  display: block;
+  height: auto;
+  width: 225px;
+  padding-bottom: 100px;
+}
+/* line 83, ../../../../../../compass/sparkida/sass/styles.scss */
+#menu > li {
+  display: block;
+  overflow: hidden;
+}
+/* line 87, ../../../../../../compass/sparkida/sass/styles.scss */
+#menu .group {
+  font-size: 16px;
+  font-weight: bold;
+  color: #666;
+  padding: 10px;
+}
+/* line 93, ../../../../../../compass/sparkida/sass/styles.scss */
+#menu a {
+  display: block;
+  overflow: hidden;
+  /*color: #3A70AC;*/
+  color: #22A7FF;
+  font-size: 14px;
+  padding-left: 10px;
+  height: 40px;
+  line-height: 42px;
+  text-decoration: none;
+  font-weight: normal;
+  border-top: 1px dashed #FFF;
+  border-bottom: 1px dashed #FFF;
+  font-family: "Lucida Console", Monaco, monospace;
+  background: url(../img/icons/lnkRt.png) 206px 16px no-repeat;
+}
+/* line 109, ../../../../../../compass/sparkida/sass/styles.scss */
+#menu .disabled {
+  color: #999;
+  background: none;
+}
+/* line 112, ../../../../../../compass/sparkida/sass/styles.scss */
+#menu .disabled:hover {
+  color: #999;
+  background: none;
+}
+/* line 117, ../../../../../../compass/sparkida/sass/styles.scss */
+#menu a:hover {
+  box-shadow: 0px 0px 6px #CCC;
+  border-color: #EEE;
+  background-color: #FCFCFC;
+  color: #333;
+}
+
+/* line 125, ../../../../../../compass/sparkida/sass/styles.scss */
+#pending {
+  padding-left: 10px;
+  font-size: 16px;
+  height: 50px;
+  line-height: 52px;
+  font-weight: bold;
+  color: #999;
+  position: relative;
+}
+
+/* line 136, ../../../../../../compass/sparkida/sass/styles.scss */
+.subMenu > * {
+  width: 230px;
+  overflow: hidden;
+  display: block;
+}
+/* line 141, ../../../../../../compass/sparkida/sass/styles.scss */
+.subMenu ul {
+  padding-left: 10px;
+}
+/* line 144, ../../../../../../compass/sparkida/sass/styles.scss */
+.subMenu li {
+  display: inline-block;
+  padding-left: 10px;
+  width: 200px;
+  list-style: disc inside;
+}
+
+/* line 153, ../../../../../../compass/sparkida/sass/styles.scss */
+#menu .subMenu ul a {
+  width: 180px;
+  display: inline-block;
+  overflow: hidden;
+}
+
+/* line 160, ../../../../../../compass/sparkida/sass/styles.scss */
+.subMenu h4, .subMenu h5 {
+  width: 180px;
+  display: inline-block;
+  overflow: hidden;
+}
+/* line 165, ../../../../../../compass/sparkida/sass/styles.scss */
+.subMenu h4 {
+  font-size: 14px;
+  color: #444;
+  font-weight: normal;
+}
+/* line 169, ../../../../../../compass/sparkida/sass/styles.scss */
+.subMenu h4 span {
+  display: inline;
+}
+/* line 173, ../../../../../../compass/sparkida/sass/styles.scss */
+.subMenu h5 {
+  width: 180px;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+/*
+#tinyCode {
+	display: block;
+	padding: 10px 0;
+	margin: 10px 0;
+	color: #555;
+	font-size: 16px;
+	line-height: 18px;
+	border-top: 1px dashed #CCC;
+	border-bottom: 1px dashed #CCC;
+}
+
+#tinyCode span {
+	 padding: 0px;
+}
+
+#tinyCode .tinyBlue {
+	font-weight: normal;
+}
+
+.tinyBlue {
+	font-weight: normal;
+	color: #17C
+}
+
+.tinyRed {
+	font-weight: bold;
+	color: #FF554D;
+}
+
+#tinyCode .tinyRed {
+	font-weight: bold;
+	color: #666;
+}
+
+#tinyCode .tinyCodeIndent {
+	display: block;
+	font-weight: normal;
+	margin: 10px 0px 6px 20px
+}
+
+*/
+/************************************/
+/* line 225, ../../../../../../compass/sparkida/sass/styles.scss */
+.info {
+  display: block;
+  color: #666;
+  margin: 20px 0 10px;
+  width: 80%;
+  max-width: 320px;
+  font-size: 12px;
+  font-family: "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
+  line-height: 16px;
+}
+/* line 234, ../../../../../../compass/sparkida/sass/styles.scss */
+.info h6 {
+  display: block;
+  border: 4px solid #EEE;
+  padding: 10px;
+  color: #555;
+  font-size: 16px;
+  font-family: "Titillium Web", Arial, sans;
+}
+
+/* line 245, ../../../../../../compass/sparkida/sass/styles.scss */
+#teaser ol {
+  margin-top: 10px;
+  list-style: inside decimal;
+}
+/* line 249, ../../../../../../compass/sparkida/sass/styles.scss */
+#teaser ul {
+  display: block;
+  margin-top: 10px;
+  border: 1px solid #EEE;
+  padding: 10px;
+}
+
+/********************wrap*******************/
+/* line 259, ../../../../../../compass/sparkida/sass/styles.scss */
+#mc {
+  display: block;
+  margin: 0;
+}
+
+/* line 264, ../../../../../../compass/sparkida/sass/styles.scss */
+#wrap {
+  display: block;
+  position: relative;
+  background: #EEE;
+  width: 100%;
+  padding-bottom: 20px;
+  height: 100%;
+  padding-left: 10px;
+}
+</style>
+<script>
+self.dev = !0;
+(function(w,s,a)
+{
+	var d = w.document;
+	if( void 0 != w[a] )return;
+	w[a] = {
+		settings: {
+			source: 'http://s1.sparkida/sparkida/',
+			base: 'http://sparkida'
+			
+	//Set the *Spark*
+
+		}
+	};
+
+	//start load checker
+	//block page view
+	d.documentElement.className += ' js';
+	//get the spk asynchronously
+	var x = d.createElement(s),
+	y = d.getElementsByTagName(s)[0];
+	x.async = true;
+	x.src = '//s1.sparkida/src/js/spk/spk.js?v=1395760412';
+	y.parentNode.insertBefore(x, y);
+
+}(window,'script','Spk'))
+</script>
+
+</head>
+
+<body>
+	<div id="mc">
+<div id="wrap"><div id="info">
+	<div id="mainLogo">
+		<img src="http://s1.sparkida/sparkida/img/com/sparkidaLogo_v2.png" width="450" height="84" />
+	</div><!--/sparkLogo-->
+	<h1><span>
+			<a class="spkIntro" href="http://spk.sparkida.com">SpkJS</a> - An elegant JavaScript framework.
+		</span></h1>
+	<h1><span>
+			<a class="spkIntro" href="http://spk.sparkida.com">Codebake</a> - A JavaScript, HTML, CSS minifier / obfuscator.
+		</span></h1>
+	<h1><span>
+			<a class="spkIntro" href="http://lily.sparkida.com">Lily</a> - An extensible Bash API for developers.
+		</span></h1>
+</div><!--/info-->
+
+</div><!--/wrap-->
+</div><!--/mc-->
+
+<div id="footer">
+	&copy; 2013 Sparkida, Sparkida.com, SpkJS Framework. All rights reserved.
+</div><!--/footer-->
+</body>
+</html>

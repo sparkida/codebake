@@ -223,6 +223,7 @@ def BakeJS(Main):
 	subsitute = config['subsitute']
 	obfuscate = config['obfuscate']
 	filepath = config['filepath']
+	header = None
 	
 	'''
 	***DEP***
@@ -237,15 +238,22 @@ def BakeJS(Main):
 	userVars = Main.userVars = defaultdict(int)
 	subsituteVars = Main.subsituteVars
 	regexList = {
-		'removeDbg'				: r'(dbg\(.*\)[,\|;]?)',
-		'removeLineComments' 	: r'([\h\t]*/{2}.*[\r\n]?)',
-		'removeDocComments'		: r'(/\*.+?\*/)',
-		'replaceString'			: r'([\(|=](?:\s+)?)((?<!/)/[^*/\n\s].*?[^\\]/[igm]{0,3})|((?P<qt>[\'"]).*?(?<!\\)(?P=qt))|(([0-9]x[a-zA-Z0-9]+))|((?<![\w\$])([0-9]+\.?)+)'
+			'removeFunctionCalls'	: r'((?:%s)\(.*\)[,\|;]?)',
+			'removeLineComments' 	: r'([\h\t]*/{2}.*[\r\n]?)',
+			'removeDocComments'		: r'(/\*.+?\*/)',
+			'replaceString'			: r'([\(|=](?:\s+)?)((?<!/)/[^*/\n\s].*?[^\\]/[igm]{0,3})|((?P<qt>[\'"]).*?(?<!\\)(?P=qt))|(([0-9]x[a-zA-Z0-9]+))|((?<![\w\$])([0-9]+\.?)+)'
 		}
 
+
+
 	#build regex commands
-	regex = regexList['removeDbg'] + '|' + regexList['removeLineComments']
-	regexMulti = re.compile(r'%s' % regexList['removeDocComments'], re.MULTILINE | re.DOTALL)
+	stripx = config['stripx']
+	if stripx:
+		stripx = '|'.join([ x.strip() for x in stripx.split(',') ])
+		regex = '%s|%s' % ((regexList['removeFunctionCalls'] % stripx),regexList['removeLineComments'])
+	else:
+		regex = regexList['removeLineComments']
+	regexMulti = re.compile(regexList['removeDocComments'], re.MULTILINE | re.DOTALL)
 	
 	def stringExchange(string):
 		"""create and return reference to string"""
@@ -279,12 +287,19 @@ def BakeJS(Main):
 	if 'string' not in config:
 		#get file from arg
 		with open(filepath) as fp:
-			Main.data = re.sub(regexList['replaceString'], stringExchange, fp.read())
+			Main.data = fp.read()
 	else:
-		Main.data = re.sub(regexList['replaceString'], stringExchange, config['string'])
+		Main.data = config['string']
 	
-	#remove comments and dbg statements
-	Main.data = re.sub(regex, '', regexMulti.sub('', Main.data))
+	if config['saveHeader']:
+		regexMulti = re.compile(regexList['removeDocComments'], re.MULTILINE | re.DOTALL)
+		match = regexMulti.search(Main.data)
+		header = re.sub(r'\s(\s)+', ' ', match.group(0))
+
+	#replace strings, remove comments and stripx
+	Main.data = re.sub(regex, '', 
+					regexMulti.sub('', 
+						re.sub(regexList['replaceString'], stringExchange, Main.data)))
 
 	if obfuscate:
 		Main.data = re.sub(r'function\((.*?\))', functionCapture, Main.data)
@@ -307,7 +322,7 @@ def BakeJS(Main):
 		'var',
 		'typeof',
 		'throw',
-		'return',
+		#'return',
 		'delete'
 	]
 	dualSpaceRequired = [
@@ -482,12 +497,6 @@ def BakeJS(Main):
 			insert(count, ' ')
 			insert(count + 2, ' ')
 			Main.skip += 2
-		elif syntax == 'if':
-			seekprev(count)
-			prev1 = seekprev.value
-			if prev1 and prev1 == 'else':
-				insert(count, ' ')
-				Main.skip += 1
 		else:
 			seeknext(count)
 			next1 = seeknext.value
@@ -499,28 +508,34 @@ def BakeJS(Main):
 				prev1 = seekprev.value
 				if prev1 == ',':
 					userVars[syntax] += 1
-					
-			if syntax in spaceRequired:
-				insert(count + 1, ' ')
-				#and skip all
-				Main.skip += 1
-			elif syntax == ';':
+			elif ';' == syntax:
 				#opt -- remove extra semicolons
 				if config['extras'] and next1 == '}':
 					Main.data[count:seeknext.index + 1] = ['}']
-
-			elif syntax == 'case':
-				#if not string
-				if next1[0:3] != '@S_' or Main.userStrings[next1].isdigit():
-					insert(count + 1, ' ')
+			elif 'else' == syntax:
+				if next1 != '{':
+					insert(count+1, ' ')
 					Main.skip += 1
-			
-			elif syntax == 'function':
+			elif 'function' == syntax:
 				if next1 and next1 != '(':
 					#set name
 					obfuscateAdd(seeknext.index)
 					insert(count + 1, ' ')
 					Main.skip += 1
+			elif 'return' == syntax:
+				if '}' != next1:
+					insert(count + 1, ' ')
+					#and skip all
+					Main.skip += 1
+			elif 'case' == syntax:
+				#if not string
+				if next1[0:3] != '@S_' or Main.userStrings[next1].isdigit():
+					insert(count + 1, ' ')
+					Main.skip += 1
+			elif syntax in spaceRequired:
+				insert(count + 1, ' ')
+				#and skip all
+				Main.skip += 1
 		count += 1
 
 	if obfuscate:
@@ -573,6 +588,9 @@ def BakeJS(Main):
 			exchange = genAlpha()
 			for pointer in exchangeVar[k]:
 				Main.data[pointer] = exchange
+	#save the header!
+	if config['saveHeader']:
+		Main.data.insert(0, header)
 	#final string!!!
 	Main.data = ''.join(Main.data)
 	
@@ -611,7 +629,6 @@ def BakeJS(Main):
 		Main.stats['originalSize'] = origSize
 		Main.stats['percent'] = int(round(100 / (float(Main.stats['originalSize']) / float((Main.stats['originalSize'] - Main.stats['compileSize'])))))
 	#complete the clean
-	Main.data = ''.join(Main.data)
 	Main.complete()
 
 
