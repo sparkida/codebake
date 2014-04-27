@@ -1,6 +1,7 @@
 build
 dist
 .history
+manifest*
 *.profile
 *.py[cod]
 *.so

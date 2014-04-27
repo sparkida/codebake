@@ -52,6 +52,7 @@ class Codebake(object):
 			'writepath'			: False,
 			'verbose'			: False,
 			'defaults'			: False,
+			'generate'			: False,
 			'chunk'				: 0
 			}
 	stats = {
@@ -80,6 +81,8 @@ class Codebake(object):
 		self.count = 0
 		self.code = ''
 		self.data = ''
+                self.man = None
+                self.manConfig = None
 		self.args = None
 		self.chunkCount = 0
 		self.stats = self.__class__.stats.copy()
@@ -105,6 +108,8 @@ class Codebake(object):
 				help='Show stats at end.')
 		add('-d', '--defaults', action='store_true', 
 				help='Sets the default optimal attributes; same as -oue')
+		add('-g', '--generate', action='store_true',
+				help='Generate documents from code using SpkMan Syntax.')
 		add('-i', '--save-header', action='store_true', 
 				help='Save first document comment; for licensing, about author, general info, etc...')
 		add('-k', '--chunk', metavar='NUMBER', type=int, 
@@ -204,10 +209,17 @@ class Codebake(object):
 				return
 		else:
 			self.args = vars(self.parser.parse_args())
+                #bind args to config prototype
 		for arg in self.args:
 			if arg in self.config and self.args[arg]:	
 				self.config[arg] = self.args[arg]
-		
+
+                if self.config['generate']:
+                    from documentor import GenerateDoc
+                    #run the manual builder
+                    GenerateDoc(self)
+                    return
+
 		if self.config['defaults']:
 			for arg in self.defaultOpts:
 				self.config[arg] = self.defaultOpts[arg]

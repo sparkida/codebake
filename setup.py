@@ -2,14 +2,14 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.1
+v1.3.0
 Author: Nicholas Riley
 """
 
 from os import path
 from setuptools import setup
 from sys import platform
-require = ['argparse']
+require = ['argparse','jinja2']
 if platform.startswith('linux'):
 	require.append('readline')
 else:
@@ -21,7 +21,7 @@ def read(fname):
 
 #from sys import platforms
 setup(name='Codebake',
-		version='1.21',
+		version='1.3.0',
 		description='Utility for quickly minifying and obfuscating JavaScript',
 		url='https://github.com/sparkida/codebake',
 		author='Nicholas Riley',

@@ -1,0 +1,64 @@
+<div class="view">
+    <div class="info">
+        {% if namespace is defined -%}
+            <h1 class="name namespace">{{ namespace }}</h1>
+        {%- endif %}
+        {%- if name is defined -%}
+            <h1 class="name">{{ name }}</h1>
+        {%- endif %}
+        <h2 class="header">{% if header is defined -%}
+            {{ header }}
+        {%- endif %}</h2>
+    </div><!--/info-->
+    {% if usage %}    
+    <div class="usage">
+        <h3>Usage: </h3>
+        {% for item in usage %}
+        <div>
+            <h4>{{ item.name }}</h4>
+            <p>{{ item.desc }}</p>
+        </div>
+        {% endfor %}
+    </div><!--/usage-->
+    {% endif %}
+    {% if param %}
+    <div class="usage">
+        <h3>Parameters: </h3>
+        <dl class="props">
+            {% for prop in param %}
+            <dt>{{ prop.name }}
+                <span>{{ prop.type }}</span>
+                <span>optional: {{ prop.optional }}</span>
+                <span>default: {{ prop.default }}</span>
+            </dt>
+            <dd>{{ prop.desc }}</dd>
+            {% endfor %}
+        <dt><!--/props-->
+    </div><!--/usage-->
+    {% endif %}
+    
+    {% if info %}
+    <div class="usage">
+        <h3>Info: </h3>
+        {% for prop in info %}
+        <p>{{ prop }}</p>
+        {% endfor %}
+    </div><!--/usage-->
+    {% endif %}
+
+    {% if example %}
+    <div class="usage">
+        <h3>Examples: </h3>
+        {% for item in example %}
+        <h6>{{ item.title }}</h6>
+        <div class="code">
+        {{ item.gutter }}
+        <ul>
+            {{ item.desc }}
+        </ul>
+        </div>
+        {% endfor %}
+    </div><!--/usage-->
+    {% endif %}
+
+</div><!--/view-->
