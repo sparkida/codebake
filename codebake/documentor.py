@@ -131,8 +131,8 @@ class GenerateDoc(object):
     """
     
     PageModel = {
-            'namespace': False,
-            'global': False,
+            'namespace': 0,
+            'global': 0,
             'instance': None,
             'example': [],
             'usage': [],
@@ -169,8 +169,7 @@ class GenerateDoc(object):
         count = 1
         for lines in main.man:
             index, page = self.buildPage(lines)
-            indexes.append({'id': count, 'index': index, 'page': self.engine.render(page)})
-            count += 1
+            indexes.append({'index': index, 'page': self.engine.render(page)})
         import json
         with open(self.manifest, 'w') as fp:
             fp.write(json.dumps(indexes))
@@ -239,10 +238,10 @@ class GenerateDoc(object):
             else:
                 method = match.group(1)
                 if method == 'namespace':
-                    page[method] = True
+                    page[method] = 1
 
                 elif method == 'global':
-                    page[method] = True
+                    page[method] = 1
 
                 elif method == 'author':
                     info = {'name': match.group(2)}
@@ -327,6 +326,8 @@ class GenerateDoc(object):
             'global': page['global'],
             'namespace': page['namespace'],
             'instance': page['instance'],
+            'examples': page['example'],
+            'examples_title': [ x['title'] for x in page['example'] ],
             'rel': page['rel']
             }
         return (index, page)
