@@ -149,6 +149,10 @@ class GenerateDoc(object):
     def __init__(self, main):
         self.page = None
         writepath = main.config['writepath']
+        filepath = main.config['filepath']
+        if not os.path.exists(filepath):
+            print('Codebake::documentor > file not found!')
+            return
         manifest = os.path.abspath(writepath) if writepath else os.path.abspath('./')
         '''
         manifest = os.path.abspath(manifest)
