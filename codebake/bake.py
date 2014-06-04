@@ -219,8 +219,6 @@ def BakeJS(Main):
     subsitute
     """
 
-
-
     config = Main.config
     subsitute = config['subsitute']
     obfuscate = config['obfuscate']
@@ -252,7 +250,7 @@ def BakeJS(Main):
     stripx = config['stripx']
     if stripx:
         stripx = '|'.join([ x.strip() for x in stripx.split(',') ])
-        regex = '%s|%s' % (regexList['removeLineComments'], (regexList['removeFunctionCalls'] % stripx))
+        regex = '%s|%s' % ((regexList['removeFunctionCalls'] % stripx), regexList['removeLineComments'])
     else:
         regex = regexList['removeLineComments']
     regexMulti = re.compile(regexList['removeDocComments'], re.MULTILINE | re.DOTALL)
@@ -308,8 +306,9 @@ def BakeJS(Main):
 
     #replace strings, remove comments and stripx
     Main.data = re.sub(regex, '', 
-        regexMulti.sub('', 
-        re.sub(regexList['replaceString'], stringExchange, Main.data)))
+                    
+                    regexMulti.sub('', 
+                        re.sub(regexList['replaceString'], stringExchange, Main.data)))
 
     if obfuscate:
         Main.data = re.sub(r'function\((.*?\))', functionCapture, Main.data)
@@ -445,6 +444,7 @@ def BakeJS(Main):
     insert = Main.data.insert
     seekprev = seek['prev']
     seeknext = seek['next']
+
     
     def obfuscateAdd(index):    
         """add main data value from index, to obfuscate list"""
@@ -569,30 +569,30 @@ def BakeJS(Main):
             if syntax.isdigit() or syntax[0:1] in skipChars or syntax in blocked:
                 count += 1
                 continue
-                if syntax in userVars:
+            if syntax in userVars:
+                dist = 0
+                while True:
+                    dist += 1
+                    prev = Main.data[count - dist]
+                    if not prev or (prev != ' ' and prev!= '\n'):
+                        break
+                #make sure it isn't part of an object
+                #if it is a ternary then obfuscate
+                if prev and prev != '.':
                     dist = 0
                     while True:
                         dist += 1
-                        prev = Main.data[count - dist]
-                        if not prev or (prev != ' ' and prev!= '\n'):
+                        next1 = mget(count + dist)
+                        if not next1 or (next1 != ' ' and next1 != '\n'):
                             break
-                    #make sure it isn't part of an object
-                    #if it is a ternary then obfuscate
-                    if prev and prev != '.':
-                        dist = 0
-                        while True:
-                            dist += 1
-                            next1 = mget(count + dist)
-                            if not next1 or (next1 != ' ' and next1 != '\n'):
-                                break
-                        if next1 != ':' or prev == '?':
+                    if next1 != ':' or prev == '?':
+                        exchangeVar[syntax].add(count)
+                    elif next1 == ':':
+                        if prev == ',' or prev == '{':
+                            pass
+                        else:
                             exchangeVar[syntax].add(count)
-                        elif next1 == ':':
-                            if prev == ',' or prev == '{':
-                                pass
-                            else:
-                                exchangeVar[syntax].add(count)
-                count += 1
+            count += 1
         #set optimal vars
         userVarsFreq = [ (len(v) * k.__len__(), k) for k,v in exchangeVar.iteritems() ] 
         userVarsFreq.sort(reverse=True)
