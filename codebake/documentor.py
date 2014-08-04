@@ -131,14 +131,17 @@ class GenerateDoc(object):
     """
     
     PageModel = {
-            'namespace': 0,
-            'global': 0,
-            'instance': None,
+            'name': False,
+            'header': False,
+            'function': False,
+            'instance': False,
+            'rel': False,
+            'namespace': False,
+            'global': False,
             'example': [],
             'usage': [],
             'info': [],
-            'param': [],
-            'rel': None
+            'param': []
             }
 
     regexList = {
@@ -166,14 +169,19 @@ class GenerateDoc(object):
         #os.mkdir(manifest)
         self.manifest = manifest
         self.main = main
-        with open('./codebake/templates/default.html', 'r') as fp:
+        view = os.path.join(os.path.dirname(__file__), 'templates', 'default.html')
+        with open(view, 'r') as fp:
             self.engine = Template(fp.read())
         self.generate()
         indexes = []
         count = 1
         for lines in main.man:
-            index, page = self.buildPage(lines)
-            indexes.append({'index': index, 'page': self.engine.render(page)})
+            print(lines)
+            try:
+                index, page = self.buildPage(lines)
+                indexes.append({'index': index, 'page': self.engine.render(page)})
+            except KeyError:
+                print('.')
         import json
         with open(self.manifest, 'w') as fp:
             fp.write(json.dumps(indexes))
@@ -229,13 +237,17 @@ class GenerateDoc(object):
         count = 0
         skip = 0
         linenum = 0
+        header = ''
 
         for num in keys:
             if skip > 0:
                 skip -= 1
                 continue
+
             match = re.match(r'^@([a-zA-Z]+) *(.+)?', line[num])
             if match is None:
+                if count == 0:
+                    header = '%s%s' % (header, line[num])
                 #print('invalid match: '...)
                 count += 1
                 continue
@@ -327,6 +339,7 @@ class GenerateDoc(object):
             count += 1
         index = {
             'name': page['name'],
+            'header': page['header'],
             'global': page['global'],
             'namespace': page['namespace'],
             'instance': page['instance'],

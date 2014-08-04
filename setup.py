@@ -22,7 +22,7 @@ def read(fname):
 
 #from sys import platforms
 setup(name='Codebake',
-        version='1.3.3',
+        version='1.3.4',
         description='Utility for quickly minifying and obfuscating JavaScript and CSS',
         url='https://github.com/sparkida/codebake',
         author='Nicholas Riley',
@@ -33,5 +33,6 @@ setup(name='Codebake',
         install_requires=require,
         py_modules=['bake'],
         packages=['Codebake'],
-        package_dir={'Codebake':'codebake'})
+        package_dir={'Codebake': 'codebake'},
+        package_data={'Codebake': ['templates/*.html']})
 

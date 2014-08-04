@@ -1,14 +1,16 @@
 <div class="view">
     <div class="info">
-        {% if namespace is defined -%}
+        {% if namespace -%}
             <h1 class="name namespace">{{ namespace }}</h1>
         {%- endif %}
-        {%- if name is defined -%}
+        {%- if name -%}
             <h1 class="name">{{ name }}</h1>
         {%- endif %}
-        <h2 class="header">{% if header is defined -%}
+        <h2 class="header">
+        {% if header -%}
             {{ header }}
-        {%- endif %}</h2>
+        {%- endif %}
+        </h2>
     </div><!--/info-->
     {% if usage %}    
     <div class="usage">
