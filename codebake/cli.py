@@ -1,10 +1,8 @@
-from sys import platform
 
-if platform.startswith('linux'):
-    import readline
-else:
-    import readline
+from os import sys
+if sys == 'nt':
     import pyreadline
+import readline
 from code import InteractiveConsole
 
 class Console(InteractiveConsole):
