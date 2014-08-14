@@ -265,10 +265,10 @@ def BakeJS(Main):
         #add to user stored strings
         if g2:
             Main.userStrings[exchangeRef] = g2
-            return '%s%s' % (string.group(1), exchangeRef)
+            return ' %s%s' % (string.group(1), exchangeRef)
         else:
             Main.userStrings[exchangeRef] = string.group(0)
-        return exchangeRef
+        return ' ' + exchangeRef
 
     def functionCapture(string):
         """capture 'function(.*)' parameters and define as vars, will follow"""
@@ -462,9 +462,15 @@ def BakeJS(Main):
                 next1 = seeknext.value
                 if not next1 or next1 != ':' or prev == '?':
                     userVars[value] += 1
-
+    
+    #0 = global scope
+    scopeLevel = 0
 
     for syntax in Main.data:
+        if syntax == '{':
+            scopeLevel += 1;
+        if syntax == '}':
+            scopeLevel -= 1;
         if Main.skip > 0:
             Main.skip -= 1
             count += 1
@@ -500,7 +506,10 @@ def BakeJS(Main):
                         break
                 if skip or not defName:
                     continue
-                obfuscateAdd(count - dist)
+                if scopeLevel == 0:
+                    blocked.add(Main.data[count - dist])
+                else:
+                    obfuscateAdd(count - dist)
         elif syntax != '=' and syntax != ';' and (syntax[0:1] in operators or syntax[0:1] in skipChars):
             count += 1
             continue
