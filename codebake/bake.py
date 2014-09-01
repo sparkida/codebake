@@ -265,10 +265,10 @@ def BakeJS(Main):
         #add to user stored strings
         if g2:
             Main.userStrings[exchangeRef] = g2
-            return ' %s%s' % (string.group(1), exchangeRef)
+            return ' %s%s ' % (string.group(1), exchangeRef)
         else:
             Main.userStrings[exchangeRef] = string.group(0)
-        return ' ' + exchangeRef
+        return ' %s ' % exchangeRef
 
     def functionCapture(string):
         """capture 'function(.*)' parameters and define as vars, will follow"""

@@ -19,7 +19,7 @@ def read(fname):
 
 #from sys import platforms
 setup(name='Codebake',
-        version='1.3.6',
+        version='1.3.8',
         description='Utility to quickly minify source and inline JavaScript and CSS',
         url='https://github.com/sparkida/codebake',
         author='Nick Riley',
