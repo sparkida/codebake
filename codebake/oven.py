@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files

@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 from os import sys
 if sys == 'nt':
     import pyreadline

@@ -241,6 +241,7 @@ def BakeJS(Main):
             'removeFunctionCalls'       : r'((?:%s)\(.*\)[,\|;]?)',
             'removeLineComments'        : r'([\h\t]*/{2}.*[\r\n]?)',
             'removeDocComments'         : r'(/\*.+?\*/)',
+            'removeHeaderComment'       : r'^(/\*{2}.+?\*/)',
             #'replaceString'             : r'([\(|=](?:\s+)?)((?<!/)/[^\*/\n\s].*?[^\\]/[igm]{0,3})|((?P<qt>[\'"]).*?(?<!\\)(?P=qt))|(([0-9]x[a-zA-Z0-9]+))|((?<![\w\$])([0-9]+\.?)+)'
             'replaceString'             : r'([\(|=](?:\s+)?)((?<!/)/.*?[^\\]/[igm]{0,3})|((?P<qt>[\'"]).*?(?<!\\)(?P=qt))|(([0-9]x[a-zA-Z0-9]+))|((?<![\w\$])([0-9]+\.?)+)'
             }
@@ -272,7 +273,7 @@ def BakeJS(Main):
 
     def functionCapture(string):
         """capture 'function(.*)' parameters and define as vars, will follow"""
-        match = re.sub(r'[^\w]',' \r',string.group(1)).split()
+        match = re.sub(r'[^\w]', ' \r', string.group(1)).split()
         if len(match):
             for name in match:
                 userVars[name] += 1
@@ -300,22 +301,20 @@ def BakeJS(Main):
     '''
     
     if config['saveHeader']:
-        regexMulti = re.compile(regexList['removeDocComments'], re.MULTILINE | re.DOTALL)
-        match = regexMulti.search(Main.data)
+        regexHeader = re.compile(regexList['removeHeaderComment'], re.MULTILINE | re.DOTALL)
+        match = regexHeader.match(Main.data)
         if match:
-            header = re.sub(r'\s(\s)+', ' ', match.group(0))
+            header = match.group(0)
+    
 
     #replace strings, remove comments and stripx
     Main.data = re.sub(regex, '', 
-                    
                     regexMulti.sub('', 
                         re.sub(regexList['replaceString'], stringExchange, Main.data)))
 
     if obfuscate:
-        Main.data = re.sub(r'function\((.*?\))', functionCapture, Main.data)
+        Main.data = re.sub(r'function\s*\((.*?\))', functionCapture, Main.data)
     
-
-            
     '''
     #strip whitespace !only when strict
     if not Main.config['whitespace']:
@@ -610,11 +609,9 @@ def BakeJS(Main):
             exchange = genAlpha()
             for pointer in exchangeVar[k]:
                 Main.data[pointer] = exchange
-    #save the header!
-    if config['saveHeader'] and header:
-        Main.data.insert(0, header)
     #final string!!!
     Main.data = ''.join(Main.data)
+       
     
     #write to file
     if config['writepath']:
@@ -648,7 +645,11 @@ def BakeJS(Main):
                 origSize = config['string'].__len__()
         Main.stats['originalSize'] = origSize
         Main.stats['percent'] = int(round(100 / (float(Main.stats['originalSize']) / float((Main.stats['originalSize'] - Main.stats['compileSize'])))))
-#complete the clean
+    #save the header!
+    if config['saveHeader'] and header:
+        Main.data = '%s\n%s' % (header, Main.data)
+
+    #complete the clean
     Main.complete()
 
 
