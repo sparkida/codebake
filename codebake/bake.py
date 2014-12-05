@@ -1,7 +1,7 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.3.2
+v1.4.0
 Author: Nicholas Riley
 """
 
@@ -640,15 +640,15 @@ def BakeJS(Main):
         Main.stats['compileSize'] = Main.data.__len__()
     if config['verbose']:
         if 'string' not in config:
-                origSize = int(path.getsize(config['filepath']))
+            origSize = int(path.getsize(config['filepath']))
         else:
-                origSize = config['string'].__len__()
+            origSize = config['string'].__len__()
         Main.stats['originalSize'] = origSize
         Main.stats['percent'] = int(round(100 / (float(Main.stats['originalSize']) / float((Main.stats['originalSize'] - Main.stats['compileSize'])))))
     #save the header!
     if config['saveHeader'] and header:
         Main.data = '%s\n%s' % (header, Main.data)
-
+    
     #complete the clean
     Main.complete()
 

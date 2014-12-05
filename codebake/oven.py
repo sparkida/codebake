@@ -2,17 +2,16 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.3.2
+v1.4.0
 Author: Nicholas Riley
 """
 
-#TODO - File concatenate
 #TODO - Insert seperator --sep-text --sep-file?
-#TODO* - switch lists for collections.deque and profile results
+#TODO - switch lists for collections.deque and profile results
 #TODO Optimize mixin block variables with bake
 
 import sys
-from os import path,name
+from os import path, sep
 from argparse import ArgumentParser
 
                 
@@ -45,8 +44,10 @@ class Codebake(object):
             'recipe'                    : False,
             'stripx'                    : False,
             #'string'                   : False,
-            'force'                             : False,
+            'force'                     : False,
             'saveHeader'                : False,
+            'compileAll'                : False,
+            'watch'                     : False,
             'extras'                    : False,
             'obfuscate'                 : False,
             'subsitute'                 : False,
@@ -54,7 +55,7 @@ class Codebake(object):
             'verbose'                   : False,
             'defaults'                  : False,
             'generate'                  : False,
-            'chunk'                             : 0
+            'chunk'                     : 0
             }
     stats = {
             'originalSize'              : None,
@@ -62,8 +63,12 @@ class Codebake(object):
             'compileSize'               : None,
             'outputPath'                : None
             }
+
+    globalConfigSet = False
+    datetime = None
+    createdDirs = set()
         
-        
+
     def __init__(self):
         #holds all variables going to
         self.parser = None
@@ -82,12 +87,59 @@ class Codebake(object):
         self.count = 0
         self.code = ''
         self.data = ''
+        self.data = ''
         self.man = None
         self.manConfig = None
         self.args = None
         self.chunkCount = 0
         self.stats = self.__class__.stats.copy()
         self.config = self.__class__.config.copy()
+
+    def findGlobalConfig(self):
+        if self.globalConfigSet:
+            return
+        from ConfigParser import ConfigParser
+        if not path.exists('./bake.ini'):
+            raise IOError('Codebake > no bake.ini found!')
+        self.globalConfigSet = True
+        self.ini = ConfigParser()
+        self.ini.read('./bake.ini')
+        self.iniSrc = self.ini.get('compile', 'src')
+        self.iniDestination = self.ini.get('compile', 'destination')
+        self.relSrcPath = path.relpath(path.abspath(path.dirname(self.iniSrc)))
+        self.relDestinationPath = path.relpath(path.abspath(path.dirname(self.iniDestination)))
+
+    def update(self, watch, filepath, mask):
+        print('\033[0;29mUpdating[%s]:\033[0;m \033[0;36m%s\033[0;m'  % (
+                    self.datetime.today().strftime('%I:%M:%S'), 
+                    path.basename(filepath.path)))
+        self.prepFile(filepath.path)
+        try:
+            self.baker(self)
+        except:
+            print('Error Occured: 0x001')
+        else:
+            print('\033[0;32mFile Updated!\033[0;m')
+
+
+    def watch(self):
+        from bake import BakeJS
+        from datetime import datetime
+        from twisted.internet import reactor
+        from twisted.internet import inotify
+        from twisted.python import filepath
+        self.baker = BakeJS
+        self.datetime = datetime
+        self.findGlobalConfig()
+        notifier = inotify.INotify()
+        notifier.startReading()
+        notifier.watch(
+                filepath.FilePath(self.relSrcPath),
+                mask=4,
+                autoAdd=True,
+                callbacks=[self.update],
+                recursive=True)
+        reactor.run()
 
     def interact(self):
         """create ArgumentParser object and call parseOpts"""   
@@ -99,6 +151,10 @@ class Codebake(object):
                 epilog='',
                 usage='codebake filepath\n\tcodebake [OPTIONS] [-f filepath]\n\tcodebake filepath [OPTIONS]')
         add = parser.add_argument
+        add('watch', metavar='watch', type=bool, nargs='?',
+                        help='Watch the current directory for updates - [only .js].')
+        add('compileAll', metavar='all', type=bool, nargs='?',
+                        help='Recursively compiles all scripts in directory.')
         add('-o', '--obfuscate', action='store_true', 
                         help='Use obfuscation.')
         add('-u', '--subsitute', action='store_true',
@@ -131,7 +187,7 @@ class Codebake(object):
         #parser.add_argument('-', '--force', action='store_true', 
                         #help='Forces overwriting and saving of files as well as the creation of directories.')
         #check opts and run the parser
-        self._parseOpts(0,1)
+        self._parseOpts(0, 1)
 
 
     def _parseOpts(self, interactive=0, fresh=0, force=0):
@@ -147,7 +203,7 @@ class Codebake(object):
             pass
         else:
             #make sure it isn't part of an ArgumentParser option
-            if command[0] != '-':
+            if command[0] != '-' and command not in ['all','watch']:
                 if path.isfile(path.realpath(command)):
                     sys.argv.insert(1, '-f')
                     argLength += 1
@@ -156,7 +212,7 @@ class Codebake(object):
                     return
         #end shell command hook
         #TODO - rewrite below to access an api module
-        if argLength < 3:
+        if argLength < 3 and command not in ['all', 'watch']:
             if argLength > 1:
                 #check for help
                 if sys.argv[1] == '-h' or sys.argv[1] == '--help':
@@ -171,7 +227,7 @@ class Codebake(object):
                 #force interactive mode
                 self.interactive = 1
                 if self.console == None:
-                    '''the console will add to the execution time, so only add it if needed'''
+                    """the console will add to the execution time, so only add it if needed"""
                     from cli import Console
                     self.console = Console()
                     def restart(fresh = 0):
@@ -197,12 +253,12 @@ class Codebake(object):
             else:
                 print('Error: required [-f Filepath]')
                 sys.exit(1)
-
+    
         #get args, #fail if no filepath provided
         filepathFailed = False
         #set arguments as settings
         #try:
-        if self.interactive:
+        if self.interactive :
             try:
                 self.args = vars(self.parser.parse_args(sys.argv[1:len(sys.argv)]))
             except:
@@ -210,6 +266,7 @@ class Codebake(object):
                 return
         else:
             self.args = vars(self.parser.parse_args())
+    
         #bind args to config prototype
         for arg in self.args:
             if arg in self.config and self.args[arg]:   
@@ -224,9 +281,18 @@ class Codebake(object):
         if self.config['defaults']:
             for arg in self.defaultOpts:
                 self.config[arg] = self.defaultOpts[arg]
-
+        
         recipe = self.config['recipe']
         files = None
+    
+        if self.config['watch']:
+            self.compileAll()
+            self.watch()
+            return
+        if self.config['compileAll']:
+            self.compileAll()
+            return
+
         if recipe:
             with open(recipe, 'r') as fh:
                 recipeType = fh.readline().strip()
@@ -245,8 +311,17 @@ class Codebake(object):
             self.config['string'] = ''.join(composite)
             self.config['format'] = recipeType
         elif 'string' not in self.config:
-            #verify file
-            self.checkFileName()
+            #self.checkFileName()#moved below 
+            if not self.config['filepath']:
+                self.noFile('noEmpty')
+            elif not path.isfile(self.config['filepath']):
+                self.noFile('noFile')
+            if self.config['format'] == '':
+                filename, ext = path.splitext(self.config['filepath'])
+                if ext == '':
+                    self.noFile('noFormat')
+                else:
+                    self.config['format'] = ext[1:]
 
         #bake...
         ext = self.config['format']
@@ -262,6 +337,42 @@ class Codebake(object):
         else:
             raise StandardError('Codebake > Invalid format')
 
+    def prepFile(self, filepath, synchronize = False):
+        """resolve the filepath and update config"""
+        basedir = path.abspath(self.relSrcPath)
+        if basedir in filepath:
+            filepath = '.%s' % filepath.split(basedir)[1]
+        normpath = path.normpath(filepath)
+        destination_filepath = path.join(self.relDestinationPath, normpath)
+        if synchronize and path.exists(destination_filepath) and \
+                path.getmtime(filepath) <= path.getmtime(destination_filepath):
+            if self.config['verbose']:
+                print('skipping %s ' % filepath)
+            return False
+        dirname = path.dirname(destination_filepath)
+        if dirname not in self.createdDirs:
+            self.createdDirs.add(dirname)
+            if not path.isdir(dirname):
+                if self.config['verbose']:
+                    print('Making directories: %s' % dirname)
+                os.makedirs(dirname)
+        self.config['writepath'] = destination_filepath
+        self.config['filepath'] = filepath
+
+    def compileAll(self):
+        """compile all javascript files found in self.relSrcPath"""
+        self.findGlobalConfig()
+        from subprocess import Popen, PIPE
+        #find all javascript files
+        paths = Popen('find %s -name "*.js"' % self.relSrcPath, stdout=PIPE, shell=True)
+        stdout, stdin = paths.communicate()
+        stdout = stdout.strip().split('\n')
+        from bake import BakeJS
+        for filepath in stdout:
+            if not self.prepFile(filepath, True):
+                continue
+            BakeJS(self)
+        self.config['watch'] or self.quit(1)
 
     def get(self, index):
         try:
@@ -269,53 +380,41 @@ class Codebake(object):
         except IndexError:
             return False
     
-    #restart interactive console
     def restart(self):
-        #reset args
+        """restart interactive console"""
         sys.argv = [sys.argv[0]]
         self.__reload()
         self.console.restart()
         return
 
-    #handle final closing operations
     def complete(self):
+        """handle final closing operations"""
+        compileAll = self.config['compileAll']
+        watch = self.config['watch']
         if self.isatty:
             if self.stats['outputPath'] == None:
                 print(self.data)
-            else:
-                print('File created: %s' % self.stats['outputPath'])
             if self.config['verbose']:
                 #TODO - make into json for api front
                 print(self._getStats())
-            if self.interactive:
+            if self.interactive and not compileAll and not watch:
                 self.restart()
                 return
         elif self.stats['outputPath'] == None:
             print(self.data)
-        self.quit(1)
+        if not compileAll and not watch:
+            self.quit(1)
 
-    #get file name from input
     def noFile(self, msgType):
+        """get file name from input"""
         if msgType != None:
             print(self.__class__.msg[msgType])
             if not self.isatty or self.isatty and not self.interactive:
                 self.quit(1)
         self.restart()
 
-    #make sure file exists
-    def checkFileName(self):
-        if not self.config['filepath']:
-            self.noFile('noEmpty')
-        elif not path.isfile(self.config['filepath']):
-            self.noFile('noFile')
-        if self.config['format'] == '':
-            filename, ext = path.splitext(self.config['filepath'])
-            if ext == '':
-                self.noFile('noFormat')
-            else:
-                self.config['format'] = ext[1:]
-
     def _getStats(self):
+        """get info for compiled file"""
         string = ''
         end = '\n' if self.isatty else ';'
         sep = ': ' if self.isatty else '='
@@ -325,8 +424,8 @@ class Codebake(object):
                 string += stat + sep + str(self.stats[stat]) + end
         return string.rstrip()
 
-    #quit with message
     def quit(self, msg = ''):
+        """quit with message"""
         if msg != '':
             if msg == 1:
                 sys.exit()
@@ -347,14 +446,14 @@ class RecurseBake(object):
     """
     
     def __init__(self, data):
-        #holds all variables going to
+        """holds all variables going to..."""
         self.parser = None
         self.console = None
         self.__reload()
         self.config['string'] = data
 
     def __reload(self):
-        #reset user settings
+        """reset user settings"""
         self.userStrings = {}
         self.userVars = {}
         self.exchangeCount = 0

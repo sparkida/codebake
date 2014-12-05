@@ -3,13 +3,13 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.3.6
+v 1.4.0
 Author: Nicholas Riley
 """
 
 from os import path,sys
 from setuptools import setup
-require = ['argparse','readline']
+require = ['argparse','readline','twisted']
 if sys == 'nt':
     require.append('pyreadline')
 
@@ -19,7 +19,7 @@ def read(fname):
 
 #from sys import platforms
 setup(name='Codebake',
-        version='1.3.8',
+        version='1.4.0',
         description='Utility to quickly minify source and inline JavaScript and CSS',
         url='https://github.com/sparkida/codebake',
         author='Nick Riley',
