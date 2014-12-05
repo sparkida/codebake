@@ -110,9 +110,13 @@ class Codebake(object):
         self.relDestinationPath = path.relpath(path.abspath(path.dirname(self.iniDestination)))
 
     def update(self, watch, filepath, mask):
+        basepath = path.basename(filepath.path)
+        if basepath == '4913':
+            #ignore vim update
+            return
         print('\033[0;29mUpdating[%s]:\033[0;m \033[0;36m%s\033[0;m'  % (
                     self.datetime.today().strftime('%I:%M:%S'), 
-                    path.basename(filepath.path)))
+                    basepath))
         self.prepFile(filepath.path)
         try:
             self.baker(self)
@@ -477,6 +481,6 @@ class RecurseBake(object):
 
 
 if __name__ == '__main__':
-        sys.exit(Codebake())
+    Codebake()
 
 
