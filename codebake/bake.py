@@ -1,14 +1,11 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.4.0
 Author: Nicholas Riley
 """
 
 import re
 from os import path, sep, makedirs
-
-__version__ = '1.3.2'
 
 class Generator(object):
         
@@ -106,7 +103,7 @@ def BakeHTML(Main):
         baker = RecurseBake(string.group(2))
         #bake it
         BakeJS(baker)
-        mark = '[@__CODEBAKE__%d__XbnsjZOL224]' % Main.count
+        mark = '[@__CBK__%d__XxOL2i4]' % Main.count
         Main.count += 1
         Main.userStrings[mark] = '%s%s%s' % (head, baker.data, tail)
         return mark
@@ -117,7 +114,7 @@ def BakeHTML(Main):
         baker = RecurseBake(string.group(2))
         #bake it
         BakeCSS(baker)
-        mark = '[@__CODEBAKE__%d__XbnsjZOL224]' % Main.count
+        mark = '[@__CBK__%d__XxOL2i4]' % Main.count
         Main.count += 1
         Main.userStrings[mark] = '%s%s%s' % (head, baker.data, tail)
         return mark
@@ -225,13 +222,13 @@ def BakeJS(Main):
     filepath = config['filepath']
     header = None
     
-    '''
+    """
     ***DEP***
     if subsitute:
         for n in Main.subsituteVars.copy():
             addVar(n)
             userVarsFreq[n] += 1
-    '''
+    """
     from collections import defaultdict
     gen = Generator()   
     genAlpha = gen.alpha
@@ -292,13 +289,17 @@ def BakeJS(Main):
             Main.data = fp.read()
     else:
         Main.data = config['string']
-
     
-    '''
+    if Main.data.strip() == '':
+        if config['verbose']:
+            print('\033[0;33mempty:\033[0;m %s' % config['filepath'])
+        return
+    
+    """
     reg = re.compile(r'', re.MULTILINE | re.DOTALL)
     reg.sub(exchangeTernary
     return
-    '''
+    """
     
     if config['saveHeader']:
         regexHeader = re.compile(regexList['removeHeaderComment'], re.MULTILINE | re.DOTALL)
@@ -315,12 +316,12 @@ def BakeJS(Main):
     if obfuscate:
         Main.data = re.sub(r'function\s*\((.*?\))', functionCapture, Main.data)
     
-    '''
+    """
     #strip whitespace !only when strict
     if not Main.config['whitespace']:
             Main.data = re.sub(' ', ' @_s ', Main.data)
             Main.data = re.sub('\t', ' @_t ', Main.data)
-    '''
+    """
     
     if config['chunk']:
         Main.data = re.sub('\n', chunk, Main.data)
@@ -560,7 +561,7 @@ def BakeJS(Main):
         count += 1
 
     if obfuscate:
-        '''
+        """
         create a defaultdict that starts a set
         which we'll use to keep an index of items
         to be obfuscated. We will then be able to 
@@ -569,7 +570,7 @@ def BakeJS(Main):
         so if we had an index 'myValue' with set([0, 2, 18, 34])
         we would calculate 'myValue'.__len__() * len(set)
         as opposed to prioritizing the largest set(amount of indexes)
-        '''
+        """
         exchangeVar = defaultdict(set)
         count = 0
         skipChars.update([';','\n'] + list(operators))

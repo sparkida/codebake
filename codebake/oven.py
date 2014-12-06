@@ -2,7 +2,6 @@
 """
 Codebake
 Clean CSS, HTML, and JavaScript Files
-v1.4.0
 Author: Nicholas Riley
 """
 
@@ -11,9 +10,10 @@ Author: Nicholas Riley
 #TODO Optimize mixin block variables with bake
 
 import sys
-from os import path, sep
+from os import path, sep, makedirs
 from argparse import ArgumentParser
 
+__version__ = '1.4.2' 
                 
 class Codebake(object):
 
@@ -39,6 +39,7 @@ class Codebake(object):
             }
     #TODO - seperate javascript specific functions
     config = {
+            'empty'                     : False,
             'filepath'                  : False,
             'format'                    : '',
             'recipe'                    : False,
@@ -155,9 +156,9 @@ class Codebake(object):
                 epilog='',
                 usage='codebake filepath\n\tcodebake [OPTIONS] [-f filepath]\n\tcodebake filepath [OPTIONS]')
         add = parser.add_argument
-        add('watch', metavar='watch', type=bool, nargs='?',
+        add('command', metavar='watch', nargs='*',
                         help='Watch the current directory for updates - [only .js].')
-        add('compileAll', metavar='all', type=bool, nargs='?',
+        add('command', metavar='all', nargs='*',
                         help='Recursively compiles all scripts in directory.')
         add('-o', '--obfuscate', action='store_true', 
                         help='Use obfuscation.')
@@ -214,19 +215,29 @@ class Codebake(object):
                 else:
                     self.noFile('noFile')
                     return
+        if command in ['-v', '--verbose']:
+            print('Codebake v%s' % __version__)
         #end shell command hook
-        #TODO - rewrite below to access an api module
-        if argLength < 3 and command not in ['all', 'watch']:
+        if command in ['watch', 'all']:
+            """set positional parameters"""
+            if command == 'all':
+                self.config['compileAll'] = True
+            elif command == 'watch':
+                self.config['watch'] = True
+        elif argLength < 3:
+            """shorthand bake method, just pass files, default options assumed"""
             if argLength > 1:
                 #check for help
-                if sys.argv[1] == '-h' or sys.argv[1] == '--help':
+                if command in ['-h', '--help']:
                     self.parser.print_help()
-                    if interactive and self.isatty:
+                    if self.interactive and self.isatty:
                         self.console.restart()
                 #check for exit
-                elif sys.argv[1] == 'exit':
+                elif command == 'exit':
                     self.quit()
-                return
+                self.noFile('noEmpty')
+                raise StandardError('Codebake > Invalid format')
+            
             elif self.isatty:
                 #force interactive mode
                 self.interactive = 1
@@ -237,10 +248,10 @@ class Codebake(object):
                     def restart(fresh = 0):
                         #cli capture
                         try:
-                                opts = self.console.raw_input('codebake > ')
+                            opts = self.console.raw_input('codebake > ')
                         except KeyboardInterrupt:
-                                #bye
-                                self.quit()
+                            #bye
+                            self.quit()
                         #add __file__ to new args + opts
                         sys.argv = [sys.argv[0]] + opts.split()
                         self._parseOpts(1, fresh)
@@ -248,16 +259,22 @@ class Codebake(object):
                 #process fail, no user processes matched below
                 if fresh:
                     #print startup message
-                    print('-----Codebake-----')
+                    print('-----Codebake v%s-----' % __version__)
                     self.parser.print_help()
                 elif not force:
                     print('Error: Invalid Filepath : use -h for help')
                     #start console
-                self.console.restart()
+                while True:
+                    try:
+                        self.console.restart()
+                    except StandardError:
+                        pass
+                    except KeyboardInterrupt:
+                        break
+                self.quit()
             else:
                 print('Error: required [-f Filepath]')
                 sys.exit(1)
-    
         #get args, #fail if no filepath provided
         filepathFailed = False
         #set arguments as settings
@@ -270,7 +287,6 @@ class Codebake(object):
                 return
         else:
             self.args = vars(self.parser.parse_args())
-    
         #bind args to config prototype
         for arg in self.args:
             if arg in self.config and self.args[arg]:   
@@ -288,7 +304,7 @@ class Codebake(object):
         
         recipe = self.config['recipe']
         files = None
-    
+        
         if self.config['watch']:
             self.compileAll()
             self.watch()
@@ -321,11 +337,17 @@ class Codebake(object):
             elif not path.isfile(self.config['filepath']):
                 self.noFile('noFile')
             if self.config['format'] == '':
-                filename, ext = path.splitext(self.config['filepath'])
-                if ext == '':
-                    self.noFile('noFormat')
+                try:
+                    filename, ext = path.splitext(self.config['filepath'])
+                except AttributeError:
+                    """capture filepath=False"""
+                    self.noFile('noEmpty')
+                    return
                 else:
-                    self.config['format'] = ext[1:]
+                    if ext == '':
+                        self.noFile('noFormat')
+                    else:
+                        self.config['format'] = ext[1:]
 
         #bake...
         ext = self.config['format']
@@ -359,9 +381,10 @@ class Codebake(object):
             if not path.isdir(dirname):
                 if self.config['verbose']:
                     print('Making directories: %s' % dirname)
-                os.makedirs(dirname)
+                makedirs(dirname)
         self.config['writepath'] = destination_filepath
         self.config['filepath'] = filepath
+        return True
 
     def compileAll(self):
         """compile all javascript files found in self.relSrcPath"""
