@@ -144,7 +144,21 @@ class Codebake(object):
                 autoAdd=True,
                 callbacks=[self.update],
                 recursive=True)
-        reactor.run()
+        #save for good measure
+        #log = path.join(path.abspath(path.dirname(path.realpath(__file__))), 'bake.log')
+        #fh = open(log, 'w')
+        from os import devnull
+        fh = open(devnull, 'w')
+        stderr = sys.stderr
+        sys.stderr = fh
+        while True:
+            try:
+                reactor.run()
+            except:
+                fh.close()
+                sys.stderr = stderr
+                break
+        self.quit('...\n\033[0;33m---killing watcher-->\033[0;m')
 
     def interact(self):
         """create ArgumentParser object and call parseOpts"""   
@@ -306,6 +320,7 @@ class Codebake(object):
         files = None
         
         if self.config['watch']:
+            print('Codebake v%s: Watcher\n----------------------\n' % __version__)
             self.compileAll()
             self.watch()
             return
@@ -458,7 +473,7 @@ class Codebake(object):
                 sys.exit()
             else:
                 if self.config['verbose']:
-                    print(_getStats())
+                    print(self._getStats())
                 sys.exit(msg)
         else:
             sys.exit("Goodbye!\n")
