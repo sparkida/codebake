@@ -421,7 +421,10 @@ class Codebake(object):
     
     def makedirs(self, dirname = ''):
         if dirname == '':
-            self.config['writepath'] = path.join(self.relDestinationPath, self.config['writepath'])
+            try:
+                self.config['writepath'] = path.join(self.relDestinationPath, self.config['writepath'])
+            except AttributeError:
+                pass
             return
         if dirname not in self.createdDirs:
             self.createdDirs.add(dirname)

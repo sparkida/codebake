@@ -8,7 +8,7 @@ Author: Nicholas Riley
 
 #get it going
 if __name__ == '__main__':
-    from oven import Codebake
+    from codebake.oven import Codebake
     Codebake()
 
 
