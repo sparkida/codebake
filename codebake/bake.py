@@ -96,7 +96,6 @@ def BakeHTML(Main):
     searchJS = re.compile(r'%s' % regexList['extractJS'], re.MULTILINE | re.DOTALL)
     searchCSS = re.compile(r'%s' % regexList['extractCSS'], re.MULTILINE | re.DOTALL)
             
-
     def extractJS(string):
         head = string.group(1)
         tail = string.group(3)
@@ -118,7 +117,6 @@ def BakeHTML(Main):
         Main.count += 1
         Main.userStrings[mark] = '%s%s%s' % (head, baker.data, tail)
         return mark
-
 
     #read file if not string
     if 'string' not in config:
@@ -238,12 +236,10 @@ def BakeJS(Main):
             'removeFunctionCalls'       : r'((?:%s)\(.*\)[,\|;]?)',
             'removeLineComments'        : r'([\h\t]*/{2}.*[\r\n]?)',
             'removeDocComments'         : r'(/\*.+?\*/)',
-            'removeHeaderComment'       : r'^(/\*{2}.+?\*/)',
+            'removeHeaderComment'       : r'^(/\*!.+?\*/)',
             #'replaceString'             : r'([\(|=](?:\s+)?)((?<!/)/[^\*/\n\s].*?[^\\]/[igm]{0,3})|((?P<qt>[\'"]).*?(?<!\\)(?P=qt))|(([0-9]x[a-zA-Z0-9]+))|((?<![\w\$])([0-9]+\.?)+)'
             'replaceString'             : r'([\(|=](?:\s+)?)((?<!/)/.*?[^\\]/[igm]{0,3})|((?P<qt>[\'"]).*?(?<!\\)(?P=qt))|(([0-9]x[a-zA-Z0-9]+))|((?<![\w\$])([0-9]+\.?)+)'
             }
-
-
 
     #build regex commands
     stripx = config['stripx']
@@ -307,7 +303,6 @@ def BakeJS(Main):
         if match:
             header = match.group(0)
     
-
     #replace strings, remove comments and stripx
     Main.data = re.sub(regex, '', 
                     regexMulti.sub('', 
@@ -395,6 +390,7 @@ def BakeJS(Main):
         #'@_t'
         ])
 
+
     #create classes to dunamically handle seeked indexes
     class Seeker(object):
         def __init__(self, instance = ''):
@@ -445,7 +441,6 @@ def BakeJS(Main):
     insert = Main.data.insert
     seekprev = seek['prev']
     seeknext = seek['next']
-
     
     def obfuscateAdd(index):    
         """add main data value from index, to obfuscate list"""
@@ -610,66 +605,29 @@ def BakeJS(Main):
             exchange = genAlpha()
             for pointer in exchangeVar[k]:
                 Main.data[pointer] = exchange
+    #save the header!
+    if config['saveHeader'] and header:
+        header = '%s\n' % header
+        Main.data.insert(0, header)
     #final string!!!
     Main.data = ''.join(Main.data)
-       
-    
-    #write to file
-    if config['writepath']:
-        outputPath = Main.stats['outputPath'] = path.abspath(config['writepath'])
-        dirPath = path.dirname(outputPath)
-        if not path.isdir(dirPath):
-            if Main.isatty:
-                createDirs = checkDirs(dirPath)
-                if not config['force']:
-                    answer = raw_input('Create Directories[Yes/No]? > ').lower()
-                    if answer == 'yes' or answer == 'y':
-                        makedirs(createDirs)
-                else:
-                    makedirs(createDirs)
-            #not interactive
-            elif not config['force']:
-                Main.quit('Directories don\'t exists: use command option -x to force creation')
-        with open(outputPath, 'w') as fp:
-            fp.write(Main.data)
-        #update Main
-        if config['verbose']:
-            Main.stats['originalPath'] = config['writepath']
-            Main.stats['compileSize'] = path.getsize(outputPath)
-    elif config['verbose']:
-        #update Main
-        Main.stats['compileSize'] = Main.data.__len__()
+     
     if config['verbose']:
+        Main.stats['compileSize'] = Main.data.__len__()
         if 'string' not in config:
             origSize = int(path.getsize(config['filepath']))
         else:
             origSize = config['string'].__len__()
         Main.stats['originalSize'] = origSize
-        Main.stats['percent'] = int(round(100 / (float(Main.stats['originalSize']) / float((Main.stats['originalSize'] - Main.stats['compileSize'])))))
-    #save the header!
-    if config['saveHeader'] and header:
-        Main.data = '%s\n%s' % (header, Main.data)
-    
+        difference = float(Main.stats['originalSize'] - Main.stats['compileSize'])
+        try:
+            Main.stats['percent'] = int(round(100 / (float(Main.stats['originalSize']) / difference)))
+        except ZeroDivisionError:
+            if difference == 0 and origSize == 0:
+                print('file empty: %s' % config['filepath'])
+            else:
+                Main.stats['percent'] = 0
+    #return
     #complete the clean
     Main.complete()
 
-
-#check and display directories
-def checkDirs(dirPath):
-    join = path.join
-    relPath = path.splitdrive(dirPath)[1]
-    dirs = relPath.split(sep)
-    if dirs[0] == '':
-        dirs = dirs[1:]
-    fullpath = '%s%s' % (sep, dirs.pop(0))
-    while True:
-        fullpath = join(fullpath, dirs.pop(0))
-        if not path.isdir(fullpath):
-            break
-    print("------------------\nDirectories don't exist:")
-    for d in dirs:
-        fullpath = join(fullpath, d)
-        print(fullpath)
-    return fullpath
-
-    

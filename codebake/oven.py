@@ -10,10 +10,10 @@ Author: Nicholas Riley
 #TODO Optimize mixin block variables with bake
 
 import sys
-from os import path, sep, makedirs
+from os import path, sep, makedirs, unlink
 from argparse import ArgumentParser
 
-__version__ = '1.4.2' 
+__version__ = '1.4.3' 
                 
 class Codebake(object):
 
@@ -39,11 +39,14 @@ class Codebake(object):
             }
     #TODO - seperate javascript specific functions
     config = {
+            'purge'                     : False,    
             'empty'                     : False,
             'filepath'                  : False,
             'format'                    : '',
             'recipe'                    : False,
             'stripx'                    : False,
+            'copy'                      : False,
+            'symlink'                   : False,
             #'string'                   : False,
             'force'                     : False,
             'saveHeader'                : False,
@@ -62,7 +65,7 @@ class Codebake(object):
             'originalSize'              : None,
             'originalPath'              : None,
             'compileSize'               : None,
-            'outputPath'                : None
+            'writepath'                : None
             }
 
     globalConfigSet = False
@@ -96,19 +99,26 @@ class Codebake(object):
         self.stats = self.__class__.stats.copy()
         self.config = self.__class__.config.copy()
 
-    def findGlobalConfig(self):
+    def setGlobalConfig(self, useIni = True):
         if self.globalConfigSet:
             return
-        from ConfigParser import ConfigParser
-        if not path.exists('./bake.ini'):
-            raise IOError('Codebake > no bake.ini found!')
+        if useIni:
+            if not path.exists('./bake.ini'):
+                raise IOError('Codebake > no bake.ini found!')
+            from ConfigParser import ConfigParser
+            self.ini = ConfigParser()
+            self.ini.read('./bake.ini')
+            self.iniSrc = self.ini.get('compile', 'src')
+            self.iniDestination = self.ini.get('compile', 'destination')
+            self.relSrcPath = path.relpath(path.abspath(path.dirname(self.iniSrc)))
+            self.relDestinationPath = path.relpath(path.abspath(path.dirname(self.iniDestination)))
+        else:
+            self.relSrcPath = path.relpath(path.abspath(path.dirname(self.config['filepath'])))
+            if self.config['writepath']:
+                self.relDestinationPath = path.relpath(path.abspath(path.dirname(self.config['writepath'])))
+            else:
+                self.relDestinationPath = self.relSrcPath
         self.globalConfigSet = True
-        self.ini = ConfigParser()
-        self.ini.read('./bake.ini')
-        self.iniSrc = self.ini.get('compile', 'src')
-        self.iniDestination = self.ini.get('compile', 'destination')
-        self.relSrcPath = path.relpath(path.abspath(path.dirname(self.iniSrc)))
-        self.relDestinationPath = path.relpath(path.abspath(path.dirname(self.iniDestination)))
 
     def update(self, watch, filepath, mask):
         basepath = path.basename(filepath.path)
@@ -135,7 +145,7 @@ class Codebake(object):
         from twisted.python import filepath
         self.baker = BakeJS
         self.datetime = datetime
-        self.findGlobalConfig()
+        self.setGlobalConfig()
         notifier = inotify.INotify()
         notifier.startReading()
         notifier.watch(
@@ -170,12 +180,18 @@ class Codebake(object):
                 epilog='',
                 usage='codebake filepath\n\tcodebake [OPTIONS] [-f filepath]\n\tcodebake filepath [OPTIONS]')
         add = parser.add_argument
-        add('command', metavar='watch', nargs='*',
+        add('command', metavar='watch', nargs='?', default=False,
                         help='Watch the current directory for updates - [only .js].')
-        add('command', metavar='all', nargs='*',
+        add('command', metavar='all', nargs='?', default=False,
                         help='Recursively compiles all scripts in directory.')
         add('-o', '--obfuscate', action='store_true', 
                         help='Use obfuscation.')
+        add('-c', '--copy', action='store_true',
+                        help='Directly copy the file from filepath to writepath, no other actions are performed.')
+        add('-l', '--symlink', action='store_true',
+                        help='Create symlink(s) of the file from filepath to writepath, no other actions are performed.')
+        add('-p', '--purge', action='store_true',
+                        help='Purge created symlink(s), no other actions are performed.')
         add('-u', '--subsitute', action='store_true',
                         help='Replace [true, false, undefined] with [!0, !1, void 0]')
         add('-e', '--extras', action='store_true',
@@ -238,6 +254,7 @@ class Codebake(object):
                 self.config['compileAll'] = True
             elif command == 'watch':
                 self.config['watch'] = True
+            sys.argv.pop(1)
         elif argLength < 3:
             """shorthand bake method, just pass files, default options assumed"""
             if argLength > 1:
@@ -246,12 +263,13 @@ class Codebake(object):
                     self.parser.print_help()
                     if self.interactive and self.isatty:
                         self.console.restart()
+                    return
                 #check for exit
                 elif command == 'exit':
                     self.quit()
+                    return
                 self.noFile('noEmpty')
                 raise StandardError('Codebake > Invalid format')
-            
             elif self.isatty:
                 #force interactive mode
                 self.interactive = 1
@@ -324,11 +342,10 @@ class Codebake(object):
             self.compileAll()
             self.watch()
             return
-        if self.config['compileAll']:
+        elif self.config['compileAll']:
             self.compileAll()
             return
-
-        if recipe:
+        elif recipe:
             with open(recipe, 'r') as fh:
                 recipeType = fh.readline().strip()
                 if recipeType[0] != '[':
@@ -364,7 +381,9 @@ class Codebake(object):
                     else:
                         self.config['format'] = ext[1:]
 
-        #bake...
+        #bake single file...
+        self.setGlobalConfig(False)
+        self.makedirs()
         ext = self.config['format']
         if 'js' == ext:
             from bake import BakeJS
@@ -385,35 +404,64 @@ class Codebake(object):
             filepath = '.%s' % filepath.split(basedir)[1]
         normpath = path.normpath(filepath)
         destination_filepath = path.join(self.relDestinationPath, normpath)
-        if synchronize and path.exists(destination_filepath) and \
+        if (self.config['symlink'] or self.config['purge']) \
+                and path.islink(destination_filepath):
+            if self.config['verbose']:
+                print('removing old symlink: %s' % destination_filepath)
+            unlink(destination_filepath)
+        elif synchronize and path.exists(destination_filepath) and \
                 path.getmtime(filepath) <= path.getmtime(destination_filepath):
             if self.config['verbose']:
-                print('skipping %s ' % filepath)
+                print('skipping: %s ' % filepath)
             return False
-        dirname = path.dirname(destination_filepath)
+        self.config['writepath'] = destination_filepath
+        self.config['filepath'] = filepath
+        self.makedirs(path.dirname(destination_filepath))
+        return True
+    
+    def makedirs(self, dirname = ''):
+        if dirname == '':
+            self.config['writepath'] = path.join(self.relDestinationPath, self.config['writepath'])
+            return
         if dirname not in self.createdDirs:
             self.createdDirs.add(dirname)
             if not path.isdir(dirname):
                 if self.config['verbose']:
                     print('Making directories: %s' % dirname)
                 makedirs(dirname)
-        self.config['writepath'] = destination_filepath
-        self.config['filepath'] = filepath
-        return True
 
     def compileAll(self):
         """compile all javascript files found in self.relSrcPath"""
-        self.findGlobalConfig()
+        self.setGlobalConfig()
         from subprocess import Popen, PIPE
+        from bake import BakeJS
         #find all javascript files
         paths = Popen('find %s -name "*.js"' % self.relSrcPath, stdout=PIPE, shell=True)
         stdout, stdin = paths.communicate()
         stdout = stdout.strip().split('\n')
-        from bake import BakeJS
+        verbose = self.config['verbose']
+        copy = self.config['copy']
+        symlink = self.config['symlink']
+        if copy:
+            from shutil import copyfile
+        elif symlink:
+            from os import symlink
+            fileExists = path.exists
         for filepath in stdout:
-            if not self.prepFile(filepath, True):
+            if not self.prepFile(filepath, False if symlink or copy else False):
                 continue
-            BakeJS(self)
+            if copy:
+                copyfile(self.config['filepath'], self.config['writepath'])
+            elif symlink:
+                sympath = path.abspath(self.config['writepath'])
+                srcpath = path.abspath(self.config['filepath'])
+                if fileExists(sympath):
+                    unlink(sympath)
+                if verbose:
+                    print('Linking: %s -> %s' % (sympath, srcpath))
+                symlink(srcpath, sympath)
+            else:
+                BakeJS(self)
         self.config['watch'] or self.quit(1)
 
     def get(self, index):
@@ -433,17 +481,21 @@ class Codebake(object):
         """handle final closing operations"""
         compileAll = self.config['compileAll']
         watch = self.config['watch']
+        if self.config['writepath']:
+            writepath = self.config['writepath']
+            if self.config['verbose']:
+                print('writing: %s' % writepath)
+            with open(writepath, 'w') as fp:
+                fp.write(self.data)
+        else:
+            print(self.data)
         if self.isatty:
-            if self.stats['outputPath'] == None:
-                print(self.data)
             if self.config['verbose']:
                 #TODO - make into json for api front
                 print(self._getStats())
             if self.interactive and not compileAll and not watch:
                 self.restart()
                 return
-        elif self.stats['outputPath'] == None:
-            print(self.data)
         if not compileAll and not watch:
             self.quit(1)
 
@@ -477,7 +529,6 @@ class Codebake(object):
                 sys.exit(msg)
         else:
             sys.exit("Goodbye!\n")
-
 
 
 class RecurseBake(object):
